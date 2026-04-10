@@ -1,0 +1,506 @@
+<div class="admin-page">
+  <header class="admin-top">
+    <div class="brand">
+      <img [src]="logoImage" alt="Liceo logo" class="brand-logo" />
+      <div class="brand-text">
+        <span>LICEO</span>
+        <span>EVENT HUB</span>
+      </div>
+    </div>
+
+    <div class="top-icons">
+      <button type="button" class="menu-button" (click)="toggleMenu()" aria-label="Menu">
+        <span aria-hidden="true">&#9776;</span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="admin-menu" *ngIf="menuOpen" aria-label="Admin menu">
+    <button type="button" (click)="goHome()">Home</button>
+    <button type="button" (click)="openCreate()">Create event</button>
+    <button type="button" (click)="openMessages()">Messages</button>
+    <button type="button" (click)="openNotifications()">Notifications</button>
+    <button type="button" (click)="openSettings()">Settings</button>
+  </nav>
+
+  <section class="admin-title-area" aria-label="Admin header">
+    <div class="title-left">
+      <h1>{{ currentUser?.fullName || 'Admin name' }}</h1>
+      <h2>{{ currentUser?.department || 'Department' }}</h2>
+    </div>
+
+    <div class="title-icons" aria-label="Quick actions">
+      <button type="button" (click)="goHome()" aria-label="Home">
+        <span aria-hidden="true">&#8962;</span>
+      </button>
+      <button type="button" (click)="openCreate()" aria-label="Create event">
+        <span aria-hidden="true">+</span>
+      </button>
+      <button type="button" (click)="openMessages()" aria-label="Messages">
+        <span aria-hidden="true">&#128172;</span>
+      </button>
+      <button type="button" (click)="openNotifications()" aria-label="Notifications">
+        <span aria-hidden="true">&#128276;</span>
+      </button>
+      <button type="button" (click)="openSettings()" aria-label="Settings">
+        <span aria-hidden="true">&#9881;</span>
+      </button>
+    </div>
+  </section>
+
+  <main>
+    <section class="analytics-section" *ngIf="analyticsEvents.length > 0" aria-label="Event analytics">
+      <div class="analytics-heading">
+        <div>
+          <p class="analytics-kicker">Admin dashboard analytics</p>
+          <h3>Engagement snapshot</h3>
+          <p class="analytics-copy">{{ analyticsSummary }}</p>
+        </div>
+      </div>
+
+      <div class="analytics-cards">
+        <article class="analytics-card">
+          <span class="analytics-label">Comments</span>
+          <strong>{{ formatCount(analyticsComments) }}</strong>
+          <p>Total comments across your managed events</p>
+        </article>
+
+        <article class="analytics-card">
+          <span class="analytics-label">Likes</span>
+          <strong>{{ formatCount(analyticsLikes) }}</strong>
+          <p>Total likes collected from all event posts</p>
+        </article>
+
+        <article class="analytics-card">
+          <span class="analytics-label">Shares</span>
+          <strong>{{ formatCount(analyticsShares) }}</strong>
+          <p>Successful shares from dashboard and admin views</p>
+        </article>
+
+        <article class="analytics-card">
+          <span class="analytics-label">Attendance</span>
+          <strong>{{ formatCount(analyticsAttendance) }}</strong>
+          <p>Estimated attendees based on turnout per event</p>
+        </article>
+
+        <article class="analytics-card">
+          <span class="analytics-label">Registered</span>
+          <strong>{{ formatCount(analyticsRegistered) }}</strong>
+          <p>Total registered participants across managed events</p>
+        </article>
+
+        <article class="analytics-card">
+          <span class="analytics-label">Overall feedback</span>
+          <strong>{{ formatFeedback(analyticsFeedbackAverage) }}/5</strong>
+          <p>Average event sentiment and turnout score</p>
+        </article>
+      </div>
+
+      <div class="analytics-grid">
+        <section class="chart-panel" aria-label="Comments likes and shares chart">
+          <div class="chart-head">
+            <h4>Comments, likes and shares</h4>
+            <div class="chart-legend">
+              <span class="legend-chip comments-chip">Comments</span>
+              <span class="legend-chip likes-chip">Likes</span>
+              <span class="legend-chip shares-chip">Shares</span>
+            </div>
+          </div>
+
+          <div class="chart-rows">
+            <div class="chart-row" *ngFor="let metric of analyticsEvents">
+              <div class="chart-labels">
+                <span class="chart-title">{{ metric.title }}</span>
+                <span class="chart-subtitle">{{ metric.department }}</span>
+              </div>
+
+              <div class="metric-stack">
+                <div class="metric-line">
+                  <span class="metric-track">
+                    <span class="metric-bar comments-bar" [style.width.%]="getAnalyticsBarWidth(metric.comments)"></span>
+                  </span>
+                  <span class="metric-number">{{ formatCount(metric.comments) }}</span>
+                </div>
+
+                <div class="metric-line">
+                  <span class="metric-track">
+                    <span class="metric-bar likes-bar" [style.width.%]="getAnalyticsBarWidth(metric.likes)"></span>
+                  </span>
+                  <span class="metric-number">{{ formatCount(metric.likes) }}</span>
+                </div>
+
+                <div class="metric-line">
+                  <span class="metric-track">
+                    <span class="metric-bar shares-bar" [style.width.%]="getAnalyticsBarWidth(metric.shares)"></span>
+                  </span>
+                  <span class="metric-number">{{ formatCount(metric.shares) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="chart-panel" aria-label="Attendance and registrations chart">
+          <div class="chart-head">
+            <h4>Attendance vs registered</h4>
+            <div class="chart-legend">
+              <span class="legend-chip attendance-chip">Attendance</span>
+              <span class="legend-chip registered-chip">Registered</span>
+            </div>
+          </div>
+
+          <div class="chart-rows">
+            <div class="chart-row" *ngFor="let metric of analyticsEvents">
+              <div class="chart-labels">
+                <span class="chart-title">{{ metric.title }}</span>
+                <span class="chart-subtitle">{{ formatCount(metric.attendance) }} attended</span>
+              </div>
+
+              <div class="metric-stack">
+                <div class="metric-line">
+                  <span class="metric-track">
+                    <span class="metric-bar attendance-bar" [style.width.%]="getAttendanceBarWidth(metric.attendance)"></span>
+                  </span>
+                  <span class="metric-number">{{ formatCount(metric.attendance) }}</span>
+                </div>
+
+                <div class="metric-line">
+                  <span class="metric-track">
+                    <span class="metric-bar registered-bar" [style.width.%]="getAttendanceBarWidth(metric.registered)"></span>
+                  </span>
+                  <span class="metric-number">{{ formatCount(metric.registered) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="chart-panel feedback-panel" aria-label="Overall event feedback chart">
+          <div class="chart-head">
+            <h4>Overall event feedback</h4>
+            <p class="chart-note">Calculated from turnout, likes, comments and shares.</p>
+          </div>
+
+          <div class="feedback-list">
+            <div class="feedback-row" *ngFor="let metric of analyticsEvents">
+              <div class="chart-labels">
+                <span class="chart-title">{{ metric.title }}</span>
+                <span class="chart-subtitle">{{ metric.department }}</span>
+              </div>
+
+              <div class="feedback-meter">
+                <span class="feedback-track">
+                  <span class="feedback-bar" [style.width.%]="getFeedbackBarWidth(metric.feedback)"></span>
+                </span>
+                <strong>{{ formatFeedback(metric.feedback) }}/5</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <h3 class="events-heading">{{ eventsHeading }}</h3>
+
+    <section class="events-row" aria-label="Your events">
+      <article *ngFor="let event of pagedEvents; trackBy: trackByEventId" class="event-card">
+        <div class="event-head">
+          <img
+            class="event-image"
+            [src]="event.image || fallbackEventImage"
+            [alt]="event.title"
+            (error)="onImageError($event)"
+          />
+          <div class="event-meta">
+            <p data-label="Department">{{ event.department }}</p>
+            <p data-label="Organizer">{{ event.organizer }}</p>
+            <p data-label="Date">{{ event.date }}</p>
+            <p data-label="Time">{{ event.time }}</p>
+            <p data-label="Location">{{ event.location }}</p>
+          </div>
+        </div>
+
+        <div class="event-body">
+          <div class="title-row">
+            <h4>{{ event.title }}</h4>
+
+            <div class="likes" aria-label="Event metrics">
+              <button type="button" class="like-btn" (click)="likeEvent(event)" aria-label="Like event">
+                <span aria-hidden="true">&#10084;</span>
+              </button>
+              <span class="metric-value">{{ formatCount(getLikes(event.id)) }}</span>
+              <button type="button" class="share-btn" (click)="shareEvent(event)" aria-label="Share event">
+                <span aria-hidden="true">&#8618;</span>
+              </button>
+            </div>
+          </div>
+
+          <p class="description">
+            <strong>Short Description:</strong>
+            {{ event.summary || event.description }}
+          </p>
+
+          <div class="footer-row">
+            <button type="button" class="comments" (click)="openComments(event)" aria-label="View comments">
+              <span class="comments-label">
+                <span aria-hidden="true">&#128172;</span>
+                <span>comments</span>
+              </span>
+              <span class="comments-count">{{ formatCount(getComments(event.id)) }}</span>
+            </button>
+
+            <div class="admin-actions">
+              <span
+                class="status"
+                [class.draft]="getEventStatus(event) === 'draft'"
+                [class.inactive]="getEventStatus(event) === 'inactive'"
+              >
+                {{ getStatusLabel(event) }}
+              </span>
+
+              <button
+                type="button"
+                class="registrations"
+                (click)="openRegistrations(event)"
+                aria-label="View registrations"
+              >
+                <span aria-hidden="true">&#128221;</span>
+                <span class="action-text">Registrations</span>
+              </button>
+
+              <button
+                type="button"
+                class="toggle-status"
+                [class.make-active]="getEventStatus(event) === 'inactive'"
+                (click)="toggleAvailability(event)"
+              >
+                {{ getEventStatus(event) === 'inactive' ? 'Make Active' : 'Make Inactive' }}
+              </button>
+
+              <button type="button" class="danger" (click)="deleteEvent(event.id)" aria-label="Delete event">
+                <span aria-hidden="true">&#128465;</span>
+                <span class="action-text">Delete<br />Event</span>
+              </button>
+
+              <button type="button" class="edit" (click)="startEdit(event)" aria-label="Edit event">
+                <span aria-hidden="true">&#9998;</span>
+                <span class="action-text">Edit Event</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="empty-state" *ngIf="pagedEvents.length === 0">
+      No events available to manage yet. Click the + icon to create one.
+    </div>
+
+    <div class="pager" *ngIf="totalPages > 1" aria-label="Pagination">
+      <button type="button" (click)="prevPage()" [disabled]="pageIndex === 1" aria-label="Previous page">
+        &lt;
+      </button>
+      <span>{{ pageIndex }}/{{ totalPages }}</span>
+      <button
+        type="button"
+        (click)="nextPage()"
+        [disabled]="pageIndex === totalPages"
+        aria-label="Next page"
+      >
+        &gt;
+      </button>
+    </div>
+  </main>
+
+  <div class="modal-backdrop" *ngIf="editorOpen" (click)="closeEditor()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">{{ isEditing ? 'Edit Event' : 'Create Event' }}</h3>
+
+      <form (ngSubmit)="submitEditor()" class="editor-form">
+        <label class="field">
+          <span class="label">Event title</span>
+          <input class="input" [(ngModel)]="formData.title" name="title" required />
+        </label>
+
+        <div class="two-col">
+          <label class="field">
+            <span class="label">Department</span>
+            <select
+              class="select"
+              [(ngModel)]="formData.department"
+              name="department"
+              [disabled]="!canChooseDepartment"
+            >
+              <option *ngFor="let department of departmentOptions" [value]="department">{{ department }}</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="label">Category</span>
+            <select class="select" [(ngModel)]="formData.category" name="category" required>
+              <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="label">Organizer</span>
+          <input class="input" [(ngModel)]="formData.organizer" name="organizer" required />
+        </label>
+
+        <div class="two-col">
+          <label class="field">
+            <span class="label">Date</span>
+            <input class="input" [(ngModel)]="formData.date" name="date" required />
+          </label>
+
+          <label class="field">
+            <span class="label">Time</span>
+            <input class="input" [(ngModel)]="formData.time" name="time" required />
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="label">Location</span>
+          <input class="input" [(ngModel)]="formData.location" name="location" required />
+        </label>
+
+        <div class="two-col">
+          <label class="field">
+            <span class="label">Capacity</span>
+            <input
+              class="input"
+              type="number"
+              min="1"
+              [(ngModel)]="formData.capacity"
+              name="capacity"
+              required
+            />
+          </label>
+
+          <label class="field">
+            <span class="label">Status</span>
+            <select class="select" [(ngModel)]="formData.status" name="status" required>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="draft">Draft</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="label">Image URL</span>
+          <input class="input" [(ngModel)]="formData.image" name="image" />
+        </label>
+
+        <label class="field">
+          <span class="label">Short description</span>
+          <textarea
+            class="textarea"
+            rows="3"
+            [(ngModel)]="formData.summary"
+            name="summary"
+            required
+          ></textarea>
+        </label>
+
+        <label class="field">
+          <span class="label">Full description</span>
+          <textarea
+            class="textarea"
+            rows="6"
+            [(ngModel)]="formData.description"
+            name="description"
+            required
+          ></textarea>
+        </label>
+
+        <div class="editor-actions">
+          <button type="submit" class="primary">
+            {{ isEditing ? 'Update Event' : 'Create Event' }}
+          </button>
+          <button type="button" class="secondary" (click)="closeEditor()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="commentsOpen" (click)="closeComments()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Comments</h3>
+      <p class="modal-subtitle" *ngIf="commentsEvent">{{ commentsEvent.title }}</p>
+
+      <div class="comments-list" *ngIf="commentsEvent">
+        <div class="comment" *ngFor="let comment of eventComments; trackBy: trackByCommentId">
+          <div class="comment-head">
+            <span class="comment-author">{{ comment.author }}</span>
+            <span class="comment-role">{{ comment.role }}</span>
+            <span class="comment-time">{{ comment.createdAt | date: 'short' }}</span>
+            <button type="button" class="comment-delete" (click)="deleteComment(comment.id)">Delete</button>
+          </div>
+          <p class="comment-text">{{ comment.text }}</p>
+        </div>
+
+        <p class="no-comments" *ngIf="eventComments.length === 0">
+          No comments yet.
+        </p>
+      </div>
+
+      <form class="comment-form" (ngSubmit)="submitComment()" *ngIf="commentsEvent">
+        <textarea
+          class="comment-input"
+          name="commentText"
+          [(ngModel)]="commentText"
+          rows="2"
+          maxlength="280"
+          placeholder="Write a comment..."
+          required
+        ></textarea>
+        <div class="editor-actions">
+          <button type="submit" class="primary" [disabled]="!commentText.trim()">Post</button>
+          <button type="button" class="secondary" (click)="closeComments()">Close</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="registrationsOpen" (click)="closeRegistrations()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Registrations</h3>
+      <p class="modal-subtitle" *ngIf="registrationsEvent">{{ registrationsEvent.title }}</p>
+
+      <div class="registration-summary">
+        <span>Total: {{ eventRegistrations.length }}</span>
+        <span>Present: {{ getPresentCount() }}</span>
+        <span>Absent: {{ getAbsentCount() }}</span>
+      </div>
+
+      <div class="registration-list" *ngIf="eventRegistrations.length > 0; else noRegistrations">
+        <div class="registration-row" *ngFor="let registration of eventRegistrations">
+          <div class="registration-info">
+            <strong>{{ registration.name }}</strong>
+            <span>{{ registration.email }}</span>
+            <span>{{ registration.department }}</span>
+            <span>{{ registration.registeredAt | date: 'short' }}</span>
+          </div>
+          <label class="attendance-toggle">
+            <input
+              type="checkbox"
+              [checked]="registration.attended"
+              (change)="toggleAttendance(registration)"
+            />
+            <span>{{ registration.attended ? 'Present' : 'Absent' }}</span>
+          </label>
+        </div>
+      </div>
+
+      <ng-template #noRegistrations>
+        <p class="no-comments">No registrations yet.</p>
+      </ng-template>
+
+      <div class="editor-actions">
+        <button type="button" class="secondary" (click)="closeRegistrations()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

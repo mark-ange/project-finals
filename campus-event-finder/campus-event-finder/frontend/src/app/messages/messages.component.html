@@ -1,0 +1,29 @@
+<div class="page" [style.background-image]="'url(' + backgroundImage + ')'">
+  <header class="topbar">
+    <div class="brand">
+      <img [src]="logoImage" alt="Liceo logo" class="brand-logo" />
+      <div class="brand-text">
+        <span>LICEO</span>
+        <span>EVENT HUB</span>
+      </div>
+    </div>
+
+    <div class="icons">
+      <button type="button" (click)="goHome()" aria-label="Home">
+        <span aria-hidden="true">&#8962;</span>
+      </button>
+      <button type="button" (click)="openNotifications()" aria-label="Notifications">
+        <span aria-hidden="true">&#128276;</span>
+      </button>
+      <button type="button" (click)="openSettings()" aria-label="Settings">
+        <span aria-hidden="true">&#9881;</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="card" aria-label="Messages">
+    <h1>Messages</h1>
+    <p>Coming soon.</p>
+  </section>
+</div>
+

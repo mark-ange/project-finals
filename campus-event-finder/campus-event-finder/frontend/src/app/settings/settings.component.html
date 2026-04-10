@@ -1,0 +1,40 @@
+<div class="settings-page" [style.background-image]="'url(' + backgroundImage + ')'">
+  <header class="settings-header">
+    <div class="brand">
+      <img [src]="logoImage" alt="Liceo logo" class="brand-logo" />
+      <div class="brand-text">
+        <span>LICEO</span>
+        <span>EVENT HUB</span>
+      </div>
+    </div>
+
+    <div class="header-icons">
+      <button type="button" (click)="goHome()" aria-label="Home">
+        <span aria-hidden="true">&#8962;</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="settings-card" aria-label="Settings">
+    <h1>Settings</h1>
+
+    <form class="settings-form" [formGroup]="settingsForm" (ngSubmit)="saveSettings()">
+      <label class="field">
+        <span class="label">Full name</span>
+        <input class="input" formControlName="fullName" />
+      </label>
+
+      <label class="field">
+        <span class="label">Department</span>
+        <input class="input" [value]="currentUser?.department || ''" readonly />
+      </label>
+
+      <button type="submit" class="save-btn" [disabled]="settingsForm.invalid">Save</button>
+    </form>
+
+    <p class="status error" *ngIf="errorMessage">{{ errorMessage }}</p>
+    <p class="status success" *ngIf="savedMessage">{{ savedMessage }}</p>
+
+    <button type="button" class="logout-btn" (click)="logout()">Logout</button>
+  </section>
+</div>

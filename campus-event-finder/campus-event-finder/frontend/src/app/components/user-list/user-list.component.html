@@ -1,0 +1,36 @@
+<section class="user-page">
+  <header class="user-header">
+    <div>
+      <h2>Users</h2>
+      <p class="subtitle">Manage users stored in the MySQL database.</p>
+    </div>
+    <a class="btn primary" routerLink="/users/new">Add User</a>
+  </header>
+
+  <div *ngIf="loading" class="status">Loading users...</div>
+  <div *ngIf="errorMessage" class="status error">{{ errorMessage }}</div>
+
+  <table *ngIf="!loading && users.length" class="user-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th class="actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let user of users; trackBy: trackByUserId">
+        <td>{{ user.id }}</td>
+        <td>{{ user.name }}</td>
+        <td>{{ user.email }}</td>
+        <td class="actions">
+          <a class="btn" [routerLink]="['/users', user.id, 'edit']">Edit</a>
+          <button class="btn danger" type="button" (click)="deleteUser(user)">Delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p *ngIf="!loading && !users.length" class="status">No users yet. Add one to get started.</p>
+</section>

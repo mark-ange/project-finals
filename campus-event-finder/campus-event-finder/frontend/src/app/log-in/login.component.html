@@ -1,0 +1,47 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="card-header">
+      <img src="assets/liceo-logo.png" alt="Liceo Logo" class="logo" />
+      <h1 class="university-title">LICEO DE CAGAYAN<br />UNIVERSITY</h1>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="sign-in-title">Sign in to your account</p>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="login-form">
+      <div class="input-wrapper">
+        <input
+          type="email"
+          placeholder="Email — @liceo.edu.ph"
+          formControlName="email"
+          class="form-input"
+          autocomplete="email"
+          id="login-email"
+        />
+      </div>
+
+      <div class="input-wrapper">
+        <input
+          type="password"
+          placeholder="Password"
+          formControlName="password"
+          class="form-input"
+          autocomplete="current-password"
+          id="login-password"
+        />
+      </div>
+
+      <p class="message error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+      <div class="row-actions">
+        <button type="submit" class="login-button" id="login-submit" [disabled]="!loginForm.valid">LOGIN</button>
+        <button type="button" (click)="onCreateAccount()" class="create-account-button" id="create-account-btn">Create an account</button>
+      </div>
+
+      <a class="forgot-password" routerLink="/forgot-password">Forgot password?</a>
+    </form>
+
+    <h2 class="app-title">CAMPUS<br />EVENT FINDER</h2>
+  </div>
+</div>

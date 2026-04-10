@@ -1,0 +1,297 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap');
+
+/* ─── Page Layout ────────────────────────────────────────── */
+.register-page {
+  min-height: 100vh;
+  display: flex;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ─── Brand Panel (Left) ─────────────────────────────────── */
+.brand-panel {
+  flex: 0 0 38%;
+  background: linear-gradient(160deg, #7a0000 0%, #3d0000 60%, #1a0000 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,212,0,0.08) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(255,60,60,0.06) 0%, transparent 55%);
+}
+
+.brand-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: #fff;
+}
+
+.brand-logo {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5));
+}
+
+.brand-title {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffd400;
+  letter-spacing: 1.5px;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.brand-divider {
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,212,0,0.6), transparent);
+  margin: 18px auto;
+}
+
+.brand-subtitle {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+}
+
+.brand-desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.65);
+  max-width: 260px;
+}
+
+/* ─── Form Panel (Right) ─────────────────────────────────── */
+.form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f7;
+  padding: 40px 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.form-container {
+  width: 100%;
+  max-width: 520px;
+  animation: fadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Form Header ────────────────────────────────────────── */
+.form-header {
+  margin-bottom: 28px;
+}
+
+.form-title {
+  margin: 0 0 6px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a0000;
+}
+
+.form-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #888;
+}
+
+/* ─── Messages ───────────────────────────────────────────── */
+.message {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.message.error {
+  background: #fff0f0;
+  border: 1px solid rgba(200, 50, 50, 0.2);
+  color: #8b0000;
+}
+
+.message.success {
+  background: #f0fff6;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #065f46;
+}
+
+/* ─── Form Fields ────────────────────────────────────────── */
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #600000;
+}
+
+.optional {
+  font-size: 10px;
+  font-weight: 500;
+  color: #aaa;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.field-input {
+  border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: #111;
+  background: #fff;
+  box-sizing: border-box;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none;
+}
+
+.field-input::placeholder {
+  color: #bbb;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: #8e0000;
+  box-shadow: 0 0 0 3px rgba(142, 0, 0, 0.1);
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ─── Submit Button ──────────────────────────────────────── */
+.submit-btn {
+  margin-top: 6px;
+  width: 100%;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #8e0000, #5a0000);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  box-shadow: 0 4px 16px rgba(142, 0, 0, 0.3);
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #a00000, #6a0000);
+  box-shadow: 0 6px 22px rgba(142, 0, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ─── Form Footer ────────────────────────────────────────── */
+.form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 22px;
+  font-size: 14px;
+  color: #777;
+}
+
+.back-link {
+  border: none;
+  background: transparent;
+  color: #8e0000;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #600000;
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 800px) {
+  .register-page {
+    flex-direction: column;
+  }
+
+  .brand-panel {
+    flex: none;
+    min-height: 220px;
+    padding: 32px 24px;
+  }
+
+  .brand-logo {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 14px;
+  }
+
+  .brand-title {
+    font-size: 18px;
+  }
+
+  .brand-desc {
+    display: none;
+  }
+
+  .form-panel {
+    padding: 32px 20px 48px;
+  }
+}
+
+@media (max-width: 520px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}

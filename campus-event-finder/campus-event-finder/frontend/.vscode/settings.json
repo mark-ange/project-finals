@@ -1,0 +1,11 @@
+{
+  "chatgpt.openOnStartup": true,
+  "files.exclude": {
+    "**/dist": true,
+    "**/out-tsc": true
+  },
+  "search.exclude": {
+    "**/dist": true,
+    "**/out-tsc": true
+  }
+}

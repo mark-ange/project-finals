@@ -1,0 +1,27 @@
+<section class="form-page">
+  <div class="form-card">
+    <h2>Add User</h2>
+    <p class="subtitle">Create a new user record in MySQL.</p>
+
+    <form (ngSubmit)="save()" #userForm="ngForm">
+      <label>
+        Full Name
+        <input name="name" type="text" [(ngModel)]="name" required />
+      </label>
+
+      <label>
+        Email
+        <input name="email" type="email" [(ngModel)]="email" required />
+      </label>
+
+      <div *ngIf="errorMessage" class="status error">{{ errorMessage }}</div>
+
+      <div class="actions">
+        <button class="btn primary" type="submit" [disabled]="saving || userForm.invalid">
+          {{ saving ? 'Saving...' : 'Save User' }}
+        </button>
+        <a class="btn" routerLink="/users">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>

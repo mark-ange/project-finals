@@ -1,0 +1,106 @@
+<div class="register-page">
+  <!-- Left brand panel -->
+  <div class="brand-panel">
+    <div class="brand-content">
+      <img src="assets/liceo-logo.png" alt="Liceo Logo" class="brand-logo" />
+      <h1 class="brand-title">LICEO DE CAGAYAN<br />UNIVERSITY</h1>
+      <div class="brand-divider"></div>
+      <p class="brand-subtitle">Campus Event Hub</p>
+      <p class="brand-desc">
+        Discover, manage, and engage with all campus events across every department — all in one place.
+      </p>
+    </div>
+  </div>
+
+  <!-- Right form panel -->
+  <div class="form-panel">
+    <div class="form-container">
+      <div class="form-header">
+        <h2 class="form-title">Create your account</h2>
+        <p class="form-subtitle">Join the campus event community</p>
+      </div>
+
+      <p class="message error" *ngIf="errorMessage">{{ errorMessage }}</p>
+      <p class="message success" *ngIf="successMessage">{{ successMessage }}</p>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form" id="register-form">
+
+        <div class="field">
+          <label class="field-label" for="reg-fullname">Full Name</label>
+          <input
+            id="reg-fullname"
+            class="field-input"
+            formControlName="fullName"
+            placeholder="Your full name"
+            autocomplete="name"
+          />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="reg-email">Email Address</label>
+          <input
+            id="reg-email"
+            class="field-input"
+            type="email"
+            formControlName="email"
+            placeholder="you@liceo.edu.ph"
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label class="field-label" for="reg-password">Password</label>
+            <input
+              id="reg-password"
+              class="field-input"
+              type="password"
+              formControlName="password"
+              placeholder="Min 6 characters"
+              autocomplete="new-password"
+            />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="reg-confirm">Confirm Password</label>
+            <input
+              id="reg-confirm"
+              class="field-input"
+              type="password"
+              formControlName="confirmPassword"
+              placeholder="Repeat password"
+              autocomplete="new-password"
+            />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="reg-department">Department</label>
+          <select id="reg-department" class="field-input" formControlName="department">
+            <option value="" disabled>Select your department</option>
+            <option *ngFor="let department of departments" [value]="department">{{ department }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="reg-admincode">Admin Code <span class="optional">(Dept. Admin only)</span></label>
+          <input
+            id="reg-admincode"
+            class="field-input"
+            formControlName="adminCode"
+            placeholder="Leave blank if not applicable"
+          />
+        </div>
+
+        <button type="submit" class="submit-btn" id="register-submit" [disabled]="registerForm.invalid">
+          Create Account
+        </button>
+      </form>
+
+      <div class="form-footer">
+        <span>Already have an account?</span>
+        <button type="button" class="back-link" (click)="onBackToLogin()" id="back-to-login-btn">Sign in</button>
+      </div>
+    </div>
+  </div>
+</div>

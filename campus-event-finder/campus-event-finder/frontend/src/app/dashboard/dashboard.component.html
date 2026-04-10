@@ -1,0 +1,221 @@
+<div class="hub-page">
+  <header class="hub-header">
+    <div class="brand">
+      <img [src]="logoImage" alt="Liceo logo" class="brand-logo" />
+      <div class="brand-text">
+        <span>LICEO</span>
+        <span>EVENT HUB</span>
+      </div>
+    </div>
+
+    <button type="button" class="menu-button" (click)="toggleMenu()" aria-label="Menu">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </button>
+  </header>
+
+  <nav class="menu-strip" *ngIf="menuOpen" aria-label="Dashboard menu">
+    <button type="button" (click)="navigateTo('/dashboard')">Home</button>
+    <button
+      type="button"
+      *ngIf="currentUser?.role === 'admin' || currentUser?.role === 'main-admin'"
+      (click)="navigateTo('/admin-events')"
+    >
+      Admin Events
+    </button>
+    <button
+      type="button"
+      *ngIf="currentUser?.role === 'student'"
+      (click)="navigateTo('/profile')"
+    >
+      Profile
+    </button>
+    <button type="button" (click)="logout()">Logout</button>
+  </nav>
+
+  <section class="hero" aria-label="Campus hero">
+    <img [src]="heroImage" alt="Campus building" />
+  </section>
+
+  <main class="hub-main">
+    <h1 class="section-title">Feature events</h1>
+
+    <section class="featured-grid" aria-label="Featured events" *ngIf="featuredEvents.length > 0; else noFeaturedEvents">
+      <article
+        class="featured-card"
+        *ngFor="let event of featuredEvents; trackBy: trackByEventId"
+        (click)="openDetails(event)"
+        tabindex="0"
+        (keydown.enter)="openDetails(event)"
+      >
+        <img
+          class="featured-image"
+          [src]="event.image || fallbackEventImage"
+          [alt]="event.title"
+          (error)="onImageError($event)"
+        />
+        <div class="featured-content">
+          <h2>{{ event.title }}</h2>
+          <p>{{ event.date }}</p>
+          <button type="button" (click)="openDetails(event); $event.stopPropagation()">
+            view details
+          </button>
+        </div>
+      </article>
+    </section>
+
+    <ng-template #noFeaturedEvents>
+      <div class="empty-panel empty-panel--compact">
+        No featured events available right now.
+      </div>
+    </ng-template>
+
+    <h1 class="section-title">Events</h1>
+
+    <section class="events-grid" aria-label="All events" *ngIf="events.length > 0; else noDepartmentEvents">
+      <article
+        class="event-card"
+        *ngFor="let event of events; trackBy: trackByEventId"
+        (click)="openDetails(event)"
+        tabindex="0"
+        (keydown.enter)="openDetails(event)"
+      >
+        <div class="event-media">
+          <img
+            class="event-image"
+            [src]="event.image || fallbackEventImage"
+            [alt]="event.title"
+            (error)="onImageError($event)"
+          />
+        </div>
+
+        <div class="event-body">
+          <div class="event-head">
+            <h2 class="event-title">{{ event.title }}</h2>
+          </div>
+
+          <div class="event-meta">
+            <div class="meta-row"><span class="meta-label">Date:</span> <span>{{ event.date }}</span></div>
+            <div class="meta-row">
+              <span class="meta-label">Location:</span> <span>{{ event.location }}</span>
+            </div>
+          </div>
+
+          <p class="event-desc"><span class="meta-label">Description:</span> {{ event.description }}</p>
+
+          <div class="event-footer">
+            <button
+              type="button"
+              class="comments-btn"
+              (click)="openDetails(event); $event.stopPropagation()"
+            >
+              <span class="comments-dot" aria-hidden="true"></span>
+              <span class="comments-label">comments</span>
+              <span class="comments-count">{{ formatCount(getComments(event.id)) }}</span>
+            </button>
+
+            <div class="event-icons">
+              <button
+                type="button"
+                class="icon-like"
+                (click)="likeEvent(event); $event.stopPropagation()"
+                aria-label="Like event"
+              >
+                <span class="heart" aria-hidden="true">&hearts;</span>
+                <span class="icon-count">{{ formatCount(getLikes(event.id)) }}</span>
+              </button>
+
+              <button
+                type="button"
+                class="icon-share"
+                (click)="shareEvent(event); $event.stopPropagation()"
+                aria-label="Share event"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    d="M18 8a3 3 0 1 0-2.82-4H15a3 3 0 0 0 .17 1l-8.2 4.1a3 3 0 1 0 0 4.6l8.2 4.1a3 3 0 1 0 .83-1.6l-8.2-4.1a3.02 3.02 0 0 0 0-2.2l8.2-4.1A3 3 0 0 0 18 8Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <ng-template #noDepartmentEvents>
+      <div class="empty-panel">
+        <h2>No active events available right now.</h2>
+        <p>Check back later or ask an admin to publish a department event.</p>
+      </div>
+    </ng-template>
+  </main>
+
+  <div class="details-backdrop" *ngIf="selectedEvent" (click)="closeDetails()">
+    <div class="details-modal" (click)="$event.stopPropagation()">
+      <button type="button" class="close-button" (click)="closeDetails()" aria-label="Close details">
+        x
+      </button>
+
+      <img
+        class="details-image"
+        [src]="selectedEvent.image || fallbackEventImage"
+        [alt]="selectedEvent.title"
+        (error)="onImageError($event)"
+      />
+      <h2>{{ selectedEvent.title }}</h2>
+      <p><strong>Date:</strong> {{ selectedEvent.date }} - {{ selectedEvent.time }}</p>
+      <p><strong>Location:</strong> {{ selectedEvent.location }}</p>
+      <p><strong>Organizer:</strong> {{ selectedEvent.organizer }}</p>
+      <p><strong>About:</strong> {{ selectedEvent.description }}</p>
+
+      <div class="details-actions">
+        <button type="button" class="details-register" (click)="registerForEvent(selectedEvent)">
+          Register
+        </button>
+        <button type="button" class="details-share" (click)="shareEvent(selectedEvent)">Share</button>
+      </div>
+
+      <p class="details-capacity">
+        {{ selectedEvent.registrations }} / {{ selectedEvent.capacity }} registered
+      </p>
+
+      <section class="comments-section" aria-label="Event comments">
+        <div class="comments-header">
+          <h3>Comments</h3>
+          <span class="comments-total">{{ formatCount(getComments(selectedEvent.id)) }}</span>
+        </div>
+
+        <div class="comments-list" *ngIf="selectedEventComments.length; else noComments">
+          <div class="comment" *ngFor="let comment of selectedEventComments; trackBy: trackByCommentId">
+            <div class="comment-head">
+              <span class="comment-author">{{ comment.author }}</span>
+              <span class="comment-role">{{ comment.role }}</span>
+              <span class="comment-time">{{ comment.createdAt | date: 'short' }}</span>
+            </div>
+            <p class="comment-text">{{ comment.text }}</p>
+          </div>
+        </div>
+
+        <ng-template #noComments>
+          <p class="no-comments">No comments yet. Be the first to comment.</p>
+        </ng-template>
+
+        <form class="comment-form" (ngSubmit)="addComment()">
+          <textarea
+            class="comment-input"
+            name="commentText"
+            [(ngModel)]="commentText"
+            rows="2"
+            maxlength="280"
+            placeholder="Write a comment..."
+            required
+          ></textarea>
+          <button type="submit" class="comment-submit" [disabled]="!commentText.trim()">Post</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</div>

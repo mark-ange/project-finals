@@ -1,0 +1,248 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap');
+
+/* ─── Page ───────────────────────────────────────────────── */
+.login-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background-image: url('/assets/background log-in.png');
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+.login-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(80,0,0,0.72) 0%, rgba(30,0,0,0.60) 100%);
+}
+
+/* ─── Card ───────────────────────────────────────────────── */
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: min(92vw, 420px);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 28px;
+  padding: 36px 40px 32px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  color: #ffffff;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.4),
+    0 0 0 1px rgba(255,255,255,0.05) inset;
+  animation: cardIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Header ─────────────────────────────────────────────── */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+}
+
+.university-title {
+  margin: 0;
+  color: #ffd400;
+  font-size: 16px;
+  line-height: 1.15;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* ─── Divider ────────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,212,0,0.4), transparent);
+  margin: 18px 0;
+}
+
+/* ─── Sign-in title ──────────────────────────────────────── */
+.sign-in-title {
+  margin: 0 0 22px;
+  color: rgba(255,255,255,0.85);
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* ─── Form ───────────────────────────────────────────────── */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 16px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.form-input::placeholder {
+  color: rgba(255,255,255,0.45);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #ffd400;
+  background: rgba(255,255,255,0.14);
+  box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.18);
+}
+
+/* ─── Error Message ──────────────────────────────────────── */
+.message {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.message.error {
+  background: rgba(255, 80, 80, 0.15);
+  border: 1px solid rgba(255,100,100,0.3);
+  color: #ffb3b3;
+}
+
+/* ─── Actions ────────────────────────────────────────────── */
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.login-button {
+  border: none;
+  border-radius: 12px;
+  padding: 0 28px;
+  height: 46px;
+  background: linear-gradient(135deg, #ffd400, #ffb800);
+  color: #3a1800;
+  font-size: 15px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+  box-shadow: 0 4px 16px rgba(255, 200, 0, 0.35);
+}
+
+.login-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(255, 200, 0, 0.5);
+}
+
+.login-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.create-account-button {
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+}
+
+.create-account-button:hover {
+  color: #ffd400;
+}
+
+/* ─── Forgot Password ────────────────────────────────────── */
+.forgot-password {
+  align-self: center;
+  margin-top: 4px;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  transition: color 0.2s;
+}
+
+.forgot-password:hover {
+  color: #ffd400;
+}
+
+/* ─── App Title ──────────────────────────────────────────── */
+.app-title {
+  margin: 24px 0 0;
+  text-align: center;
+  color: rgba(255,255,255,0.12);
+  font-size: 36px;
+  line-height: 1;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 28px 24px 26px;
+    border-radius: 22px;
+  }
+
+  .login-button {
+    padding: 0 20px;
+    font-size: 13px;
+  }
+}
