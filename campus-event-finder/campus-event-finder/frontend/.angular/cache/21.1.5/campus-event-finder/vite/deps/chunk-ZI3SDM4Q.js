@@ -1,17 +1,17 @@
 import {
   withHttpTransferCache
-} from "./chunk-BERQSVQU.js";
+} from "./chunk-WXXNVSFQ.js";
 import {
   CommonModule,
   PLATFORM_BROWSER_ID
-} from "./chunk-7XZ4A227.js";
+} from "./chunk-2LLBLCKT.js";
 import {
   DomAdapter,
   XhrFactory,
   getDOM,
   parseCookieValue,
   setRootDomAdapter
-} from "./chunk-WEXSGDHL.js";
+} from "./chunk-PZXZHAN2.js";
 import {
   APP_ID,
   ApplicationModule,
@@ -72,10 +72,11 @@ import {
   ɵɵdefineInjector,
   ɵɵdefineNgModule,
   ɵɵinject
-} from "./chunk-D7ZVSHZF.js";
+} from "./chunk-HYN3YNXK.js";
 import {
+  __async,
   __spreadValues
-} from "./chunk-PJVWDKLX.js";
+} from "./chunk-KUW5KNZA.js";
 
 // node_modules/@angular/platform-browser/fesm2022/_dom_renderer-chunk.mjs
 var EventManagerPlugin = class {
@@ -1011,20 +1012,24 @@ var KeyEventsPlugin = class _KeyEventsPlugin extends EventManagerPlugin {
     }]
   }], null);
 })();
-async function bootstrapApplication(rootComponent, options, context) {
-  const config = __spreadValues({
-    rootComponent
-  }, createProvidersConfig(options, context));
-  if (false) {
-    await resolveJitResources();
-  }
-  return internalCreateApplication(config);
+function bootstrapApplication(rootComponent, options, context) {
+  return __async(this, null, function* () {
+    const config = __spreadValues({
+      rootComponent
+    }, createProvidersConfig(options, context));
+    if (false) {
+      yield resolveJitResources();
+    }
+    return internalCreateApplication(config);
+  });
 }
-async function createApplication(options, context) {
-  if (false) {
-    await resolveJitResources();
-  }
-  return internalCreateApplication(createProvidersConfig(options, context));
+function createApplication(options, context) {
+  return __async(this, null, function* () {
+    if (false) {
+      yield resolveJitResources();
+    }
+    return internalCreateApplication(createProvidersConfig(options, context));
+  });
 }
 function createProvidersConfig(options, context) {
   return {
@@ -1746,4 +1751,4 @@ export {
   provideClientHydration,
   VERSION
 };
-//# sourceMappingURL=chunk-TQCDKYB6.js.map
+//# sourceMappingURL=chunk-ZI3SDM4Q.js.map
