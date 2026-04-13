@@ -205,8 +205,7 @@ export const DEFAULT_EVENTS: SeedEvent[] = [
     title: 'Freshmen Orientation 2024',
     date: 'August 12, 2024',
     time: '8:30 AM - 3:30 PM',
-    image:
-      'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=80',
+    image: 'assets/liceo_orientation.jpg',
     category: 'Social',
     description:
       'Welcome program for incoming students featuring campus tours, student org fair, and department briefings.',
