@@ -18,7 +18,6 @@
   <nav class="admin-menu" *ngIf="menuOpen" aria-label="Admin menu">
     <button type="button" (click)="goHome()">Home</button>
     <button type="button" (click)="openCreate()">Create event</button>
-    <button type="button" (click)="openMessages()">Messages</button>
     <button type="button" (click)="openNotifications()">Notifications</button>
     <button type="button" (click)="openSettings()">Settings</button>
   </nav>
@@ -27,24 +26,6 @@
     <div class="title-left">
       <h1>{{ currentUser?.fullName || 'Admin name' }}</h1>
       <h2>{{ currentUser?.department || 'Department' }}</h2>
-    </div>
-
-    <div class="title-icons" aria-label="Quick actions">
-      <button type="button" (click)="goHome()" aria-label="Home">
-        <span aria-hidden="true">&#8962;</span>
-      </button>
-      <button type="button" (click)="openCreate()" aria-label="Create event">
-        <span aria-hidden="true">+</span>
-      </button>
-      <button type="button" (click)="openMessages()" aria-label="Messages">
-        <span aria-hidden="true">&#128172;</span>
-      </button>
-      <button type="button" (click)="openNotifications()" aria-label="Notifications">
-        <span aria-hidden="true">&#128276;</span>
-      </button>
-      <button type="button" (click)="openSettings()" aria-label="Settings">
-        <span aria-hidden="true">&#9881;</span>
-      </button>
     </div>
   </section>
 
@@ -351,12 +332,12 @@
         <div class="two-col">
           <label class="field">
             <span class="label">Date</span>
-            <input class="input" [(ngModel)]="formData.date" name="date" required />
+            <input class="input" type="date" [(ngModel)]="formData.date" name="date" required />
           </label>
 
           <label class="field">
             <span class="label">Time</span>
-            <input class="input" [(ngModel)]="formData.time" name="time" required />
+            <input class="input" type="time" [(ngModel)]="formData.time" name="time" required />
           </label>
         </div>
 
@@ -390,8 +371,28 @@
 
         <label class="field">
           <span class="label">Image URL</span>
-          <input class="input" [(ngModel)]="formData.image" name="image" />
+          <input
+            class="input"
+            [(ngModel)]="formData.imageUrl"
+            (ngModelChange)="onImageUrlChanged($event)"
+            name="imageUrl"
+            placeholder="https://example.com/image.jpg"
+          />
+          <span class="hint">Or upload a local image file below.</span>
         </label>
+
+        <label class="field">
+          <span class="label">Upload image</span>
+          <input class="input" type="file" accept="image/*" (change)="onImageFileSelected($event)" />
+          <small *ngIf="formData.imageFileName">Selected: {{ formData.imageFileName }}</small>
+          <small class="hint">Large photos will be resized automatically before upload.</small>
+          <small class="field-error" *ngIf="imageUploadMessage">{{ imageUploadMessage }}</small>
+        </label>
+
+        <div class="image-preview" *ngIf="imagePreview">
+          <span class="label">Preview</span>
+          <img class="image-preview-frame" [src]="imagePreview" alt="Selected event image preview" />
+        </div>
 
         <label class="field">
           <span class="label">Short description</span>
@@ -400,7 +401,6 @@
             rows="3"
             [(ngModel)]="formData.summary"
             name="summary"
-            required
           ></textarea>
         </label>
 
@@ -411,13 +411,14 @@
             rows="6"
             [(ngModel)]="formData.description"
             name="description"
-            required
           ></textarea>
         </label>
 
+        <p class="form-error" *ngIf="saveErrorMessage">{{ saveErrorMessage }}</p>
+
         <div class="editor-actions">
-          <button type="submit" class="primary">
-            {{ isEditing ? 'Update Event' : 'Create Event' }}
+          <button type="submit" class="primary" [disabled]="isSaving || isProcessingImage">
+            {{ isProcessingImage ? 'Preparing image...' : (isSaving ? 'Saving...' : (isEditing ? 'Update Event' : 'Create Event')) }}
           </button>
           <button type="button" class="secondary" (click)="closeEditor()">Cancel</button>
         </div>

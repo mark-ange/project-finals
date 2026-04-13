@@ -60,33 +60,6 @@
   letter-spacing: 2px;
 }
 
-.header-icons {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.header-icons button {
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, transform 0.2s;
-}
-
-.header-icons button:hover {
-  background: rgba(255,255,255,0.22);
-  transform: translateY(-1px);
-}
-
 .profile-card {
   width: min(640px, 92vw);
   margin: 40px auto 0;

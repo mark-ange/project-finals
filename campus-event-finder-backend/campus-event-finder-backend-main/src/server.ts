@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -12,6 +12,7 @@ dotenv.config();
 
 const app = express();
 const PORT = Number(process.env.PORT || 5000);
+const JSON_BODY_LIMIT = '10mb';
 
 /*
   Example table:
@@ -26,7 +27,8 @@ const PORT = Number(process.env.PORT || 5000);
 app.use(cors());
 
 // Parse incoming JSON bodies.
-app.use(express.json());
+app.use(express.json({ limit: JSON_BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: JSON_BODY_LIMIT }));
 
 app.get('/', (_req: Request, res: Response) => {
   res.json({ message: 'Campus Event Finder API is running.' });
@@ -34,6 +36,16 @@ app.get('/', (_req: Request, res: Response) => {
 
 app.use('/api/users', usersRoutes);
 app.use('/api/events', eventsRoutes);
+
+app.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
+  if ((error as { type?: string } | null)?.type === 'entity.too.large') {
+    return res.status(413).json({
+      message: 'Image upload is too large. Please use a smaller image or paste an image URL instead.'
+    });
+  }
+
+  return next(error);
+});
 
 const run = async (): Promise<void> => {
   try {
@@ -59,7 +71,9 @@ const run = async (): Promise<void> => {
       .map(statement => statement.trim())
       .filter(statement => statement.length > 0 && !statement.startsWith('--'));
 
-    for (const statement of statements) {
+    const migrationStatements = ['ALTER TABLE events MODIFY COLUMN image MEDIUMTEXT NULL'];
+
+    for (const statement of [...statements, ...migrationStatements]) {
       await db.query(statement);
     }
     console.log('Database schema ready.');

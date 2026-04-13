@@ -12,18 +12,77 @@
       <button type="button" (click)="goHome()" aria-label="Home">
         <span aria-hidden="true">&#8962;</span>
       </button>
-      <button type="button" (click)="openMessages()" aria-label="Messages">
-        <span aria-hidden="true">&#128172;</span>
-      </button>
       <button type="button" (click)="openSettings()" aria-label="Settings">
         <span aria-hidden="true">&#9881;</span>
       </button>
     </div>
   </header>
 
-  <section class="card" aria-label="Notifications">
-    <h1>Notifications</h1>
-    <p>Coming soon.</p>
+  <section class="card" aria-label="Notifications" *ngIf="notifications$ | async as notifications">
+    <div class="card-head">
+      <div>
+        <p class="eyebrow">Notification Center</p>
+        <h1>Notifications</h1>
+        <p class="subtitle">
+          Updates for {{ currentUser?.fullName || 'your account' }}.
+        </p>
+      </div>
+
+      <div class="summary-chip">
+        <strong>{{ unreadCount }}</strong>
+        <span>Unread</span>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button type="button" class="toolbar-btn" (click)="markAllAsRead()" [disabled]="unreadCount === 0">
+        Mark all as read
+      </button>
+      <button type="button" class="toolbar-btn ghost" (click)="clearRead()" [disabled]="readCount === 0">
+        Clear read
+      </button>
+    </div>
+
+    <div class="notification-list" *ngIf="notifications.length > 0; else emptyState">
+      <article
+        class="notification-item"
+        *ngFor="let notification of notifications; trackBy: trackByNotificationId"
+        [class.unread]="!notification.read"
+      >
+        <div class="notification-meta">
+          <span class="category-pill">{{ getCategoryLabel(notification.category) }}</span>
+          <span class="timestamp">{{ notification.createdAt | date: 'medium' }}</span>
+        </div>
+
+        <h2>{{ notification.title }}</h2>
+        <p>{{ notification.message }}</p>
+
+        <div class="notification-actions">
+          <button
+            type="button"
+            class="notification-btn"
+            *ngIf="notification.route"
+            (click)="openNotification(notification)"
+          >
+            Open
+          </button>
+          <button
+            type="button"
+            class="notification-btn ghost"
+            *ngIf="!notification.read"
+            (click)="markAsRead(notification.id)"
+          >
+            Mark as read
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="empty-state">
+        <h2>No notifications yet</h2>
+        <p>Event updates, registrations, and admin activity will show up here.</p>
+      </div>
+    </ng-template>
   </section>
 </div>
-

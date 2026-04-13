@@ -33,10 +33,6 @@ export class StudentProfileComponent implements OnInit {
     this.router.navigate(['/dashboard']);
   }
 
-  openMessages(): void {
-    this.router.navigate(['/messages']);
-  }
-
   openNotifications(): void {
     this.router.navigate(['/notifications']);
   }

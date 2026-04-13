@@ -1,28 +1,30 @@
--- Campus Event Finder schema
+-- Campus Event Finder Full Schema (Flexible Admin Version)
 
--- Reset tables (safe for fresh setup)
+-- Reset tables
 DROP TABLE IF EXISTS event_registrations;
 DROP TABLE IF EXISTS event_comments;
 DROP TABLE IF EXISTS event_metrics;
 DROP TABLE IF EXISTS events;
 
+-- 1. Events Table
 CREATE TABLE IF NOT EXISTS events (
   id VARCHAR(32) PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   date VARCHAR(64) NOT NULL,
   time VARCHAR(64) NOT NULL,
-  image TEXT,
+  image TEXT NULL,               -- Optional
   category VARCHAR(64) NOT NULL,
-  description TEXT NOT NULL,
-  summary TEXT NOT NULL,
+  description TEXT NULL,         -- Made Optional (Removed NOT NULL)
+  summary TEXT NULL,             -- Made Optional (Removed NOT NULL)
   location VARCHAR(255) NOT NULL,
   organizer VARCHAR(255) NOT NULL,
   department VARCHAR(255) NOT NULL,
-  capacity INT NOT NULL,
+  capacity INT NULL,             -- Optional
   status VARCHAR(20) NOT NULL DEFAULT 'active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 2. Event Metrics Table
 CREATE TABLE IF NOT EXISTS event_metrics (
   event_id VARCHAR(32) PRIMARY KEY,
   likes INT NOT NULL DEFAULT 0,
@@ -31,6 +33,7 @@ CREATE TABLE IF NOT EXISTS event_metrics (
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 3. Event Comments Table
 CREATE TABLE IF NOT EXISTS event_comments (
   id VARCHAR(50) PRIMARY KEY,
   event_id VARCHAR(32) NOT NULL,
@@ -42,6 +45,7 @@ CREATE TABLE IF NOT EXISTS event_comments (
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 4. Event Registrations Table
 CREATE TABLE IF NOT EXISTS event_registrations (
   id VARCHAR(50) PRIMARY KEY,
   event_id VARCHAR(32) NOT NULL,

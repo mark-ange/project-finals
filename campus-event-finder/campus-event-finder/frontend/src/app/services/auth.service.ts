@@ -165,6 +165,27 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
+  getAllUsers(): User[] {
+    return this.users.slice();
+  }
+
+  findUserById(userId: string): User | undefined {
+    return this.users.find(user => user.id === userId);
+  }
+
+  getDepartmentStudents(department: string): User[] {
+    return this.users.filter(
+      user => user.role === 'student' && sameDepartment(user.department, department)
+    );
+  }
+
+  getDepartmentAdmins(department: string): User[] {
+    return this.users.filter(
+      user =>
+        user.role === 'main-admin' || (user.role === 'admin' && sameDepartment(user.department, department))
+    );
+  }
+
   isAdmin(): boolean {
     const user = this.currentUserSubject.value;
     return user?.role === 'admin' || user?.role === 'main-admin';

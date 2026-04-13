@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { DatePipe, NgFor, NgIf } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService, User } from '../services/auth.service';
@@ -16,6 +17,7 @@ import {
   scopeEventsToDepartment,
   sortEventsForDisplay
 } from '../services/event-store';
+import { NotificationService } from '../services/notification.service';
 
 interface EventFormData {
   title: string;
@@ -28,7 +30,9 @@ interface EventFormData {
   organizer: string;
   department: string;
   capacity: number;
-  image: string;
+  imageUrl: string;
+  imageFileData: string;
+  imageFileName: string;
   status: EventStatus;
   registrations?: number;
 }
@@ -57,6 +61,10 @@ export class AdminEventsComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly engagement = inject(EventEngagementService);
   private readonly eventService = inject(EventService);
+  private readonly notifications = inject(NotificationService);
+  private readonly maxImageSourceBytes = 12_000_000;
+  private readonly maxStoredImageLength = 3_000_000;
+  private readonly maxOptimizedImageDimension = 1600;
 
   readonly logoImage = 'assets/liceo-logo.png';
   readonly fallbackEventImage = 'assets/liceo-logo.png';
@@ -88,6 +96,10 @@ export class AdminEventsComponent implements OnInit {
   commentText = '';
   eventComments: EventComment[] = [];
   eventRegistrations: EventRegistration[] = [];
+  imageUploadMessage = '';
+  saveErrorMessage = '';
+  isSaving = false;
+  isProcessingImage = false;
 
   formData: EventFormData = {
     title: '',
@@ -100,8 +112,10 @@ export class AdminEventsComponent implements OnInit {
     organizer: '',
     department: '',
     capacity: 50,
-    image: '',
-    status: 'active'
+    imageUrl: '',
+    imageFileData: '',
+    imageFileName: '',
+    status: 'draft'
   };
 
   categories = [
@@ -155,11 +169,6 @@ export class AdminEventsComponent implements OnInit {
   goHome(): void {
     this.menuOpen = false;
     this.router.navigate(['/dashboard']);
-  }
-
-  openMessages(): void {
-    this.menuOpen = false;
-    this.router.navigate(['/messages']);
   }
 
   openNotifications(): void {
@@ -225,7 +234,9 @@ export class AdminEventsComponent implements OnInit {
       organizer: event.organizer,
       department: event.department,
       capacity: event.capacity,
-      image: event.image,
+      imageUrl: event.image?.startsWith('data:') ? '' : event.image || '',
+      imageFileData: event.image?.startsWith('data:') ? event.image : '',
+      imageFileName: event.image?.startsWith('data:') ? 'Uploaded image' : '',
       status: this.getEventStatus(event)
     };
     this.menuOpen = false;
@@ -238,41 +249,60 @@ export class AdminEventsComponent implements OnInit {
   }
 
   submitEditor(): void {
-    if (!this.currentUser) return;
+    if (!this.currentUser || this.isSaving || this.isProcessingImage) return;
+    this.saveErrorMessage = '';
 
     if (this.isEditing) {
       this.updateEvent();
     } else {
       this.addEvent();
     }
-
-    this.closeEditor();
   }
 
   private addEvent(): void {
     if (!this.currentUser) return;
     const department = this.getManagedDepartment();
 
+    const isIncomplete = !this.formData.title?.trim() || !this.formData.date || !this.formData.time ||
+      !this.formData.location || !this.formData.organizer || !this.formData.department;
+
     const payload: EventPayload = {
-      title: this.formData.title,
-      date: this.formData.date,
-      time: this.formData.time,
-      category: this.formData.category,
-      description: this.formData.description,
-      summary: this.formData.summary,
-      location: this.formData.location,
-      organizer: this.formData.organizer,
-      department,
-      capacity: this.formData.capacity,
-      image: this.formData.image,
-      status: this.formData.status
+      title: this.formData.title?.trim() || 'Untitled Event',
+      date: this.formData.date || new Date().toISOString().split('T')[0],
+      time: this.formData.time || '12:00',
+      category: this.formData.category || 'Technology',
+      description: this.formData.description || '',
+      summary: this.formData.summary || '',
+      location: this.formData.location || 'TBA',
+      organizer: this.formData.organizer || this.currentUser.fullName || 'Admin',
+      department: department,
+      capacity: this.formData.capacity || 0,
+      image: this.formData.imageFileData || this.formData.imageUrl || '',
+      status: isIncomplete ? 'draft' : this.formData.status || 'draft'
     };
 
+    this.isSaving = true;
     this.eventService.createEvent(payload).subscribe({
       next: event => {
         this.eventCatalog.unshift(event);
         this.engagement.primeMetrics([event]);
         this.refreshDepartmentEvents();
+        this.pageIndex = 1;
+        if (this.getEventStatus(event) === 'active') {
+          this.notifyDepartmentStudents(
+            event.department,
+            'New department event',
+            `${event.title} is now available on the event hub.`,
+            '/dashboard'
+          );
+        }
+        this.isSaving = false;
+        this.closeEditor();
+      },
+      error: err => {
+        this.isSaving = false;
+        this.saveErrorMessage = this.getSaveErrorMessage(err);
+        console.error('Failed to create event:', err);
       }
     });
   }
@@ -286,26 +316,43 @@ export class AdminEventsComponent implements OnInit {
       if (!this.authService.canManageDepartment(existing.department)) return;
       const department = this.getManagedDepartment(existing.department);
 
+      // Safe fallbacks for updates
       const payload: EventPayload = {
-        title: this.formData.title,
-        date: this.formData.date,
-        time: this.formData.time,
-        category: this.formData.category,
-        description: this.formData.description,
-        summary: this.formData.summary,
-        location: this.formData.location,
-        organizer: this.formData.organizer,
-        department,
-        capacity: this.formData.capacity,
-        image: this.formData.image,
-        status: this.formData.status
+        title: this.formData.title?.trim() || 'Untitled Event',
+        date: this.formData.date || existing.date,
+        time: this.formData.time || existing.time,
+        category: this.formData.category || 'Technology',
+        description: this.formData.description || '',
+        summary: this.formData.summary || '',
+        location: this.formData.location || 'TBA',
+        organizer: this.formData.organizer || 'Admin',
+        department: department,
+        capacity: this.formData.capacity || 0,
+        image: this.formData.imageFileData || this.formData.imageUrl || '',
+        status: this.formData.status || 'draft'
       };
 
+      this.isSaving = true;
       this.eventService.updateEvent(existing.id, payload).subscribe({
         next: event => {
           this.eventCatalog[index] = event;
           this.engagement.primeMetrics([event]);
           this.refreshDepartmentEvents();
+          if (this.getEventStatus(event) === 'active') {
+            this.notifyDepartmentStudents(
+              event.department,
+              'Event updated',
+              `${event.title} has updated event details.`,
+              '/dashboard'
+            );
+          }
+          this.isSaving = false;
+          this.closeEditor();
+        },
+        error: err => {
+          this.isSaving = false;
+          this.saveErrorMessage = this.getSaveErrorMessage(err);
+          console.error('Failed to update event:', err);
         }
       });
     }
@@ -320,9 +367,77 @@ export class AdminEventsComponent implements OnInit {
         next: () => {
           this.eventCatalog = this.eventCatalog.filter(event => event.id !== eventId);
           this.refreshDepartmentEvents();
+          if (this.getEventStatus(target) !== 'draft') {
+            this.notifyDepartmentStudents(
+              target.department,
+              'Event removed',
+              `${target.title} has been removed from the event hub.`,
+              '/dashboard'
+            );
+          }
         }
       });
     }
+  }
+
+  async onImageFileSelected(event: Event): Promise<void> {
+    this.imageUploadMessage = '';
+    this.saveErrorMessage = '';
+
+    const input = event.target as HTMLInputElement | null;
+    if (!input) {
+      this.imageUploadMessage = 'Could not read the selected image.';
+      return;
+    }
+
+    const file = input.files?.[0] ?? null;
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      this.imageUploadMessage = 'Please choose an image file.';
+      input.value = '';
+      return;
+    }
+
+    if (file.size > this.maxImageSourceBytes) {
+      this.imageUploadMessage = `Please choose an image under ${this.formatUploadLimit(this.maxImageSourceBytes)}.`;
+      input.value = '';
+      return;
+    }
+
+    this.isProcessingImage = true;
+    this.imageUploadMessage = 'Preparing image...';
+
+    try {
+      const result = await this.prepareImageForUpload(file);
+      this.formData.imageFileName = file.name;
+      this.formData.imageFileData = result.dataUrl;
+      this.formData.imageUrl = '';
+      this.imageUploadMessage = result.message;
+    } catch {
+      this.formData.imageFileData = '';
+      this.formData.imageFileName = '';
+      this.imageUploadMessage = 'Could not prepare the selected image. Try a different file or use an image URL.';
+    } finally {
+      this.isProcessingImage = false;
+      input.value = '';
+    }
+  }
+
+  onImageUrlChanged(value: string): void {
+    if (!value.trim()) {
+      return;
+    }
+
+    this.formData.imageFileData = '';
+    this.formData.imageFileName = '';
+    this.imageUploadMessage = '';
+  }
+
+  get imagePreview(): string {
+    return this.formData.imageFileData || this.formData.imageUrl || '';
   }
 
   private resetForm(): void {
@@ -332,6 +447,10 @@ export class AdminEventsComponent implements OnInit {
 
     this.isEditing = false;
     this.editingEventId = null;
+    this.imageUploadMessage = '';
+    this.saveErrorMessage = '';
+    this.isSaving = false;
+    this.isProcessingImage = false;
     this.formData = {
       title: '',
       date: '',
@@ -343,8 +462,10 @@ export class AdminEventsComponent implements OnInit {
       organizer: defaultDepartment,
       department: defaultDepartment,
       capacity: 50,
-      image: '',
-      status: 'active'
+      imageUrl: '',
+      imageFileData: '',
+      imageFileName: '',
+      status: 'draft'
     };
   }
 
@@ -424,11 +545,20 @@ export class AdminEventsComponent implements OnInit {
 
   toggleAttendance(registration: EventRegistration): void {
     if (!this.registrationsEvent) return;
+    const registrationsEvent = this.registrationsEvent;
+    const nextAttendance = !registration.attended;
     this.engagement
-      .setAttendance(this.registrationsEvent.id, registration.id, !registration.attended)
+      .setAttendance(registrationsEvent.id, registration.id, nextAttendance)
       .subscribe({
         next: () => {
-          this.engagement.fetchRegistrations(this.registrationsEvent!.id).subscribe({
+          const student = this.authService.findUserById(registration.userId);
+          this.notifications.notifyUser(student, {
+            title: 'Attendance updated',
+            message: `Your attendance for ${registrationsEvent.title} was marked ${nextAttendance ? 'present' : 'absent'}.`,
+            category: 'attendance',
+            route: '/notifications'
+          });
+          this.engagement.fetchRegistrations(registrationsEvent.id).subscribe({
             next: registrations => {
               this.eventRegistrations = registrations;
               this.refreshAnalytics();
@@ -449,10 +579,11 @@ export class AdminEventsComponent implements OnInit {
   submitComment(): void {
     if (!this.commentsEvent || !this.authService.canManageDepartment(this.commentsEvent.department)) return;
 
+    const commentsEvent = this.commentsEvent;
     const author = this.currentUser?.fullName ?? 'Anonymous';
     const role = this.currentUser?.role ?? 'admin';
     this.engagement
-      .addComment(this.commentsEvent.id, {
+      .addComment(commentsEvent.id, {
         author,
         role,
         text: this.commentText
@@ -462,6 +593,12 @@ export class AdminEventsComponent implements OnInit {
           this.commentText = '';
           this.eventComments = [comment, ...this.eventComments];
           this.refreshAnalytics();
+          this.notifyDepartmentStudents(
+            commentsEvent.department,
+            'New admin update',
+            `${author} added a comment to ${commentsEvent.title}.`,
+            '/dashboard'
+          );
         }
       });
   }
@@ -503,6 +640,21 @@ export class AdminEventsComponent implements OnInit {
         }
         this.engagement.primeMetrics([updated]);
         this.refreshDepartmentEvents();
+        if (nextStatus === 'active') {
+          this.notifyDepartmentStudents(
+            updated.department,
+            'Event is now active',
+            `${updated.title} is now active and available for students.`,
+            '/dashboard'
+          );
+        } else {
+          this.notifyDepartmentStudents(
+            updated.department,
+            'Event is inactive',
+            `${updated.title} is currently unavailable.`,
+            '/dashboard'
+          );
+        }
       }
     });
   }
@@ -628,7 +780,7 @@ export class AdminEventsComponent implements OnInit {
 
   getStatusLabel(event: HubEvent): string {
     const status = this.getEventStatus(event);
-    if (status === 'draft') return 'draft';
+    if (status === 'draft') return 'Draft';
     if (status === 'inactive') return 'Inactive';
     return 'Active';
   }
@@ -647,5 +799,166 @@ export class AdminEventsComponent implements OnInit {
     }
 
     return this.currentUser?.department || fallbackDepartment || '';
+  }
+
+  private formatUploadLimit(bytes: number): string {
+    const megabytes = bytes / 1_000_000;
+    return `${Number.isInteger(megabytes) ? megabytes : megabytes.toFixed(1)}MB`;
+  }
+
+  private notifyDepartmentStudents(
+    department: string,
+    title: string,
+    message: string,
+    route: string
+  ): void {
+    const recipients = this.authService
+      .getDepartmentStudents(department)
+      .filter(user => user.id !== this.currentUser?.id);
+
+    this.notifications.notifyUsers(recipients, {
+      title,
+      message,
+      category: 'event',
+      route
+    });
+  }
+
+  private async prepareImageForUpload(file: File): Promise<{ dataUrl: string; message: string }> {
+    const originalDataUrl = await this.readFileAsDataUrl(file);
+
+    if (this.isVectorOrGif(file.type)) {
+      if (originalDataUrl.length > this.maxStoredImageLength) {
+        throw new Error('too-large');
+      }
+
+      return {
+        dataUrl: originalDataUrl,
+        message: `Selected: ${file.name}`
+      };
+    }
+
+    const image = await this.loadImage(originalDataUrl);
+    const scaledDimensions = this.scaleDimensions(image.naturalWidth, image.naturalHeight);
+
+    let width = scaledDimensions.width;
+    let height = scaledDimensions.height;
+    let quality = 0.86;
+    let dataUrl = '';
+
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      dataUrl = this.renderOptimizedImage(image, width, height, quality);
+      if (dataUrl.length <= this.maxStoredImageLength) {
+        break;
+      }
+
+      if (quality > 0.55) {
+        quality -= 0.1;
+        continue;
+      }
+
+      width = Math.max(1, Math.round(width * 0.85));
+      height = Math.max(1, Math.round(height * 0.85));
+    }
+
+    if (!dataUrl || dataUrl.length > this.maxStoredImageLength) {
+      throw new Error('too-large');
+    }
+
+    const optimized =
+      dataUrl !== originalDataUrl ||
+      width !== image.naturalWidth ||
+      height !== image.naturalHeight;
+
+    return {
+      dataUrl,
+      message: optimized ? `Selected: ${file.name} and optimized for upload.` : `Selected: ${file.name}`
+    };
+  }
+
+  private readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const result = typeof reader.result === 'string' ? reader.result : '';
+        if (!result) {
+          reject(new Error('empty'));
+          return;
+        }
+
+        resolve(result);
+      };
+
+      reader.onerror = () => reject(new Error('read-failed'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  private loadImage(dataUrl: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('load-failed'));
+      image.src = dataUrl;
+    });
+  }
+
+  private scaleDimensions(width: number, height: number): { width: number; height: number } {
+    const maxDimension = this.maxOptimizedImageDimension;
+    const largestSide = Math.max(width, height);
+    if (largestSide <= maxDimension) {
+      return { width, height };
+    }
+
+    const scale = maxDimension / largestSide;
+    return {
+      width: Math.max(1, Math.round(width * scale)),
+      height: Math.max(1, Math.round(height * scale))
+    };
+  }
+
+  private renderOptimizedImage(
+    image: HTMLImageElement,
+    width: number,
+    height: number,
+    quality: number
+  ): string {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('canvas-unavailable');
+    }
+
+    context.drawImage(image, 0, 0, width, height);
+    return canvas.toDataURL('image/webp', quality);
+  }
+
+  private isVectorOrGif(mimeType: string): boolean {
+    return mimeType === 'image/svg+xml' || mimeType === 'image/gif';
+  }
+
+  private getSaveErrorMessage(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      if (error.status === 413) {
+        return 'The selected image is still too large to save. Try a smaller image or use an image URL.';
+      }
+
+      const apiMessage =
+        typeof error.error?.message === 'string'
+          ? error.error.message
+          : typeof error.error?.error === 'string'
+            ? error.error.error
+            : '';
+
+      if (apiMessage) {
+        return apiMessage;
+      }
+    }
+
+    return 'Could not save the event. Please try again.';
   }
 }

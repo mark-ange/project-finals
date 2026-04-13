@@ -6,6 +6,7 @@ import { AuthService, User } from '../services/auth.service';
 import { EventComment, EventEngagementService } from '../services/event-engagement.service';
 import { HubEvent, sortEventsForDisplay } from '../services/event-store';
 import { EventService, EventWithMetrics } from '../services/event.service';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -19,6 +20,7 @@ export class DashboardComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly engagement = inject(EventEngagementService);
   private readonly eventService = inject(EventService);
+  private readonly notifications = inject(NotificationService);
 
   readonly logoImage = 'assets/liceo-logo.png';
   readonly heroImage = 'assets/background log-in.png';
@@ -153,8 +155,9 @@ export class DashboardComponent implements OnInit {
 
     const author = this.currentUser?.fullName ?? 'Anonymous';
     const role = this.currentUser?.role ?? 'student';
+    const selectedEvent = this.selectedEvent;
     this.engagement
-      .addComment(this.selectedEvent.id, {
+      .addComment(selectedEvent.id, {
         author,
         role,
         text: this.commentText
@@ -163,6 +166,15 @@ export class DashboardComponent implements OnInit {
         next: comment => {
           this.commentText = '';
           this.selectedEventComments = [comment, ...this.selectedEventComments];
+          const adminRecipients = this.authService
+            .getDepartmentAdmins(selectedEvent.department)
+            .filter(user => user.id !== this.currentUser?.id);
+          this.notifications.notifyUsers(adminRecipients, {
+            title: 'New event comment',
+            message: `${author} commented on ${selectedEvent.title}.`,
+            category: 'comment',
+            route: '/admin-events'
+          });
         }
       });
   }
@@ -189,6 +201,21 @@ export class DashboardComponent implements OnInit {
       .subscribe({
         next: () => {
           event.registrations += 1;
+          const adminRecipients = this.authService
+            .getDepartmentAdmins(event.department)
+            .filter(user => user.id !== this.currentUser?.id);
+          this.notifications.notifyUser(this.currentUser, {
+            title: 'Registration confirmed',
+            message: `You are registered for ${event.title} on ${event.date}.`,
+            category: 'registration',
+            route: '/notifications'
+          });
+          this.notifications.notifyUsers(adminRecipients, {
+            title: 'New event registration',
+            message: `${this.currentUser?.fullName} registered for ${event.title}.`,
+            category: 'registration',
+            route: '/admin-events'
+          });
           alert(`Successfully registered for ${event.title}!`);
         },
         error: (err) => {

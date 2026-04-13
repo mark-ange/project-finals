@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS events (
   title VARCHAR(255) NOT NULL,
   date VARCHAR(64) NOT NULL,
   time VARCHAR(64) NOT NULL,
-  image TEXT,
+  image MEDIUMTEXT,
   category VARCHAR(64) NOT NULL,
   description TEXT NOT NULL,
   summary TEXT NOT NULL,
