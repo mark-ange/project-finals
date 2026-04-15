@@ -14,6 +14,7 @@ import { EventPayload, EventService, EventWithMetrics } from '../services/event.
 import {
   EventStatus,
   HubEvent,
+  parseEventStartDate,
   scopeEventsToDepartment,
   sortEventsForDisplay
 } from '../services/event-store';
@@ -41,6 +42,7 @@ interface AdminEventAnalytics {
   id: string;
   title: string;
   department: string;
+  date: string;
   comments: number;
   likes: number;
   shares: number;
@@ -89,6 +91,18 @@ export class AdminEventsComponent implements OnInit {
   analyticsFeedbackAverage = 0;
   analyticsEngagementMax = 1;
   analyticsAttendanceMax = 1;
+
+  readonly lineChartLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+  lineChartGridLines = [0, 20, 40, 60, 80, 100];
+  lineChartSeries = [
+    { label: 'Engagement', color: '#ff6f89', points: [0, 0, 0, 0, 0, 0, 0] },
+    { label: 'Attendance', color: '#4aa8ff', points: [0, 0, 0, 0, 0, 0, 0] }
+  ];
+  lineChartMin = 0;
+  lineChartMax = 100;
+  readonly lineChartTop = 24;
+  readonly lineChartHeight = 168;
+
   isEditing = false;
   editingEventId: string | null = null;
   commentsEvent: HubEvent | null = null;
@@ -731,6 +745,40 @@ export class AdminEventsComponent implements OnInit {
       1,
       ...this.analyticsEvents.flatMap(metric => [metric.attendance, metric.registered])
     );
+    this.updateLineChartData(metrics);
+  }
+
+  private updateLineChartData(metrics: AdminEventAnalytics[]): void {
+    const engagementPoints = new Array(this.lineChartLabels.length).fill(0);
+    const attendancePoints = new Array(this.lineChartLabels.length).fill(0);
+
+    for (const metric of metrics) {
+      const monthIndex = this.getEventMonthIndex(metric.date);
+      if (monthIndex === null || monthIndex < 0 || monthIndex >= this.lineChartLabels.length) {
+        continue;
+      }
+
+      engagementPoints[monthIndex] += metric.comments + metric.likes + metric.shares;
+      attendancePoints[monthIndex] += metric.attendance;
+    }
+
+    this.lineChartSeries[0].points = engagementPoints;
+    this.lineChartSeries[1].points = attendancePoints;
+
+    const maxValue = Math.max(10, ...engagementPoints, ...attendancePoints);
+    const step = Math.max(10, Math.ceil(maxValue / 5 / 10) * 10);
+    const topValue = step * 5;
+
+    this.lineChartGridLines = [0, step, step * 2, step * 3, step * 4, topValue];
+    this.lineChartMin = 0;
+    this.lineChartMax = topValue;
+  }
+
+  private getEventMonthIndex(dateText: string): number | null {
+    const timestamp = parseEventStartDate(dateText);
+    if (timestamp === null) return null;
+
+    return new Date(timestamp).getMonth();
   }
 
   private buildAnalytics(event: HubEvent): AdminEventAnalytics {
@@ -738,6 +786,7 @@ export class AdminEventsComponent implements OnInit {
       id: event.id,
       title: event.title,
       department: event.department,
+      date: event.date,
       comments: this.engagement.getCommentCount(event.id),
       likes: this.engagement.getLikes(event.id),
       shares: this.engagement.getShares(event.id),
@@ -766,6 +815,25 @@ export class AdminEventsComponent implements OnInit {
 
   trackByEventId(index: number, event: HubEvent): string {
     return event.id;
+  }
+
+  getMonthX(index: number): number {
+    return 50 + index * 90;
+  }
+
+  getLineChartY(value: number): number {
+    if (this.lineChartMax <= this.lineChartMin) {
+      return this.lineChartTop + this.lineChartHeight;
+    }
+
+    const ratio = (value - this.lineChartMin) / (this.lineChartMax - this.lineChartMin);
+    return this.lineChartTop + this.lineChartHeight - ratio * this.lineChartHeight;
+  }
+
+  buildLinePath(points: number[]): string {
+    return points
+      .map((value, index) => `${index === 0 ? 'M' : 'L'} ${this.getMonthX(index)} ${this.getLineChartY(value)}`)
+      .join(' ');
   }
 
   trackByCommentId(index: number, comment: EventComment): string {

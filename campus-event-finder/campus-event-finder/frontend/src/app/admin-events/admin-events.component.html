@@ -27,6 +27,22 @@
       <h1>{{ currentUser?.fullName || 'Admin name' }}</h1>
       <h2>{{ currentUser?.department || 'Department' }}</h2>
     </div>
+
+    <div class="title-icons" aria-label="Quick actions">
+      <button type="button" (click)="goHome()" aria-label="Home">
+        <span aria-hidden="true">&#8962;</span>
+      </button>
+      <button type="button" (click)="openCreate()" aria-label="Create event">
+        <span aria-hidden="true">+</span>
+      </button>
+      
+      <button type="button" (click)="openNotifications()" aria-label="Notifications">
+        <span aria-hidden="true">&#128276;</span>
+      </button>
+      <button type="button" (click)="openSettings()" aria-label="Settings">
+        <span aria-hidden="true">&#9881;</span>
+      </button>
+    </div>
   </section>
 
   <main>
@@ -76,6 +92,39 @@
           <p>Average event sentiment and turnout score</p>
         </article>
       </div>
+
+      <section class="chart-panel line-chart-panel" aria-label="Monthly engagement trend chart">
+        <div class="chart-head">
+          <h4>Monthly engagement trend</h4>
+          <div class="chart-legend">
+            <span class="legend-chip dataset-1-chip">{{ lineChartSeries[0].label }}</span>
+            <span class="legend-chip dataset-2-chip">{{ lineChartSeries[1].label }}</span>
+          </div>
+        </div>
+
+        <div class="line-chart-wrapper">
+          <svg viewBox="0 0 700 240" preserveAspectRatio="none" class="line-chart-svg" aria-hidden="true">
+            <g class="grid-lines">
+              <line *ngFor="let y of lineChartGridLines" x1="50" x2="690" [attr.y1]="getLineChartY(y)" [attr.y2]="getLineChartY(y)" />
+            </g>
+
+            <g class="grid-labels">
+              <text *ngFor="let y of lineChartGridLines" x="44" [attr.y]="getLineChartY(y) + 4">{{ y }}</text>
+            </g>
+
+            <g class="line-series">
+              <path *ngFor="let series of lineChartSeries" [attr.d]="buildLinePath(series.points)" [attr.stroke]="series.color" class="line-path" />
+              <g *ngFor="let series of lineChartSeries">
+                <circle *ngFor="let point of series.points; let i = index" [attr.cx]="getMonthX(i)" [attr.cy]="getLineChartY(point)" [attr.fill]="series.color" r="5" />
+              </g>
+            </g>
+
+            <g class="month-labels">
+              <text *ngFor="let label of lineChartLabels; let i = index" [attr.x]="getMonthX(i)" y="230">{{ label }}</text>
+            </g>
+          </svg>
+        </div>
+      </section>
 
       <div class="analytics-grid">
         <section class="chart-panel" aria-label="Comments likes and shares chart">
@@ -300,7 +349,7 @@
       <form (ngSubmit)="submitEditor()" class="editor-form">
         <label class="field">
           <span class="label">Event title</span>
-          <input class="input" [(ngModel)]="formData.title" name="title" required />
+          <input class="input" [(ngModel)]="formData.title" name="title" />
         </label>
 
         <div class="two-col">
@@ -318,7 +367,7 @@
 
           <label class="field">
             <span class="label">Category</span>
-            <select class="select" [(ngModel)]="formData.category" name="category" required>
+            <select class="select" [(ngModel)]="formData.category" name="category">
               <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
             </select>
           </label>
@@ -326,24 +375,24 @@
 
         <label class="field">
           <span class="label">Organizer</span>
-          <input class="input" [(ngModel)]="formData.organizer" name="organizer" required />
+          <input class="input" [(ngModel)]="formData.organizer" name="organizer" />
         </label>
 
         <div class="two-col">
           <label class="field">
             <span class="label">Date</span>
-            <input class="input" type="date" [(ngModel)]="formData.date" name="date" required />
+            <input class="input" type="date" [(ngModel)]="formData.date" name="date" />
           </label>
 
           <label class="field">
             <span class="label">Time</span>
-            <input class="input" type="time" [(ngModel)]="formData.time" name="time" required />
+            <input class="input" type="time" [(ngModel)]="formData.time" name="time" />
           </label>
         </div>
 
         <label class="field">
           <span class="label">Location</span>
-          <input class="input" [(ngModel)]="formData.location" name="location" required />
+          <input class="input" [(ngModel)]="formData.location" name="location" />
         </label>
 
         <div class="two-col">
@@ -355,13 +404,12 @@
               min="1"
               [(ngModel)]="formData.capacity"
               name="capacity"
-              required
             />
           </label>
 
           <label class="field">
             <span class="label">Status</span>
-            <select class="select" [(ngModel)]="formData.status" name="status" required>
+            <select class="select" [(ngModel)]="formData.status" name="status">
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
               <option value="draft">Draft</option>
@@ -371,13 +419,7 @@
 
         <label class="field">
           <span class="label">Image URL</span>
-          <input
-            class="input"
-            [(ngModel)]="formData.imageUrl"
-            (ngModelChange)="onImageUrlChanged($event)"
-            name="imageUrl"
-            placeholder="https://example.com/image.jpg"
-          />
+          <input class="input" [(ngModel)]="formData.imageUrl" name="imageUrl" placeholder="https://example.com/image.jpg" />
           <span class="hint">Or upload a local image file below.</span>
         </label>
 
@@ -385,14 +427,7 @@
           <span class="label">Upload image</span>
           <input class="input" type="file" accept="image/*" (change)="onImageFileSelected($event)" />
           <small *ngIf="formData.imageFileName">Selected: {{ formData.imageFileName }}</small>
-          <small class="hint">Large photos will be resized automatically before upload.</small>
-          <small class="field-error" *ngIf="imageUploadMessage">{{ imageUploadMessage }}</small>
         </label>
-
-        <div class="image-preview" *ngIf="imagePreview">
-          <span class="label">Preview</span>
-          <img class="image-preview-frame" [src]="imagePreview" alt="Selected event image preview" />
-        </div>
 
         <label class="field">
           <span class="label">Short description</span>
@@ -414,11 +449,9 @@
           ></textarea>
         </label>
 
-        <p class="form-error" *ngIf="saveErrorMessage">{{ saveErrorMessage }}</p>
-
         <div class="editor-actions">
-          <button type="submit" class="primary" [disabled]="isSaving || isProcessingImage">
-            {{ isProcessingImage ? 'Preparing image...' : (isSaving ? 'Saving...' : (isEditing ? 'Update Event' : 'Create Event')) }}
+          <button type="submit" class="primary">
+            {{ isEditing ? 'Update Event' : 'Create Event' }}
           </button>
           <button type="button" class="secondary" (click)="closeEditor()">Cancel</button>
         </div>

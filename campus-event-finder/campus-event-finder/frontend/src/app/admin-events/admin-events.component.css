@@ -260,8 +260,63 @@ main {
   gap: 12px;
 }
 
-.chart-panel {
-  padding: 18px;
+.line-chart-panel {
+  grid-column: 1 / -1;
+  padding: 22px 20px 18px;
+}
+
+.line-chart-wrapper {
+  width: 100%;
+  min-height: 240px;
+  overflow: hidden;
+}
+
+.line-chart-svg {
+  width: 100%;
+  height: 240px;
+  display: block;
+}
+
+.grid-lines line {
+  stroke: rgba(15, 17, 20, 0.08);
+  stroke-width: 1;
+}
+
+.grid-labels text,
+.month-labels text {
+  font-family: 'Inter', sans-serif;
+  fill: #807676;
+}
+
+.grid-labels text {
+  font-size: 10px;
+}
+
+.month-labels text {
+  font-size: 11px;
+  text-anchor: middle;
+}
+
+.line-path {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.line-series circle {
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.dataset-1-chip {
+  background: #ffd7dc;
+  color: #8f0d2f;
+}
+
+.dataset-2-chip {
+  background: #d8f0ff;
+  color: #005b87;
 }
 
 .feedback-panel {
