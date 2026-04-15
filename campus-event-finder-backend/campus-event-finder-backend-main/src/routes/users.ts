@@ -126,4 +126,93 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/users/admin-codes
+router.post('/admin-codes', async (req: Request, res: Response) => {
+  try {
+    const { created_by } = req.body;
+    if (!created_by) return res.status(400).json({ message: 'Created by is required.' });
+
+    let code: string;
+    let exists = true;
+    do {
+      code = `ADMIN-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const [rows] = await db.query<RowDataPacket[]>('SELECT id FROM admin_codes WHERE code = ? AND used = 0', [code]);
+      exists = rows.length > 0;
+    } while (exists);
+
+    await db.query('INSERT INTO admin_codes (code, created_by) VALUES (?, ?)', [code, created_by]);
+    return res.json({ code });
+  } catch (error) {
+    console.error('Error generating admin code:', error);
+    return res.status(500).json({ message: 'Failed to generate admin code.' });
+  }
+});
+
+// GET /api/users/admin-codes
+router.get('/admin-codes', async (_req: Request, res: Response) => {
+  try {
+    const [rows] = await db.query<RowDataPacket[]>('SELECT code, created_by, created_at FROM admin_codes WHERE used = 0 ORDER BY created_at DESC');
+    return res.json({ codes: rows });
+  } catch (error) {
+    console.error('Error fetching admin codes:', error);
+    return res.status(500).json({ message: 'Failed to fetch admin codes.' });
+  }
+});
+
+// POST /api/users/reset-tokens
+router.post('/reset-tokens', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required.' });
+
+    let token: string;
+    let exists = true;
+    do {
+      token = `RESET-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+      const [rows] = await db.query<RowDataPacket[]>('SELECT id FROM reset_tokens WHERE token = ? AND used = 0', [token]);
+      exists = rows.length > 0;
+    } while (exists);
+
+    await db.query('INSERT INTO reset_tokens (email, token) VALUES (?, ?)', [email, token]);
+    const link = `${req.protocol}://${req.get('host')}/reset-password?token=${token}`;
+    return res.json({ token, link });
+  } catch (error) {
+    console.error('Error generating reset token:', error);
+    return res.status(500).json({ message: 'Failed to generate reset token.' });
+  }
+});
+
+// POST /api/users/validate-admin-code
+router.post('/validate-admin-code', async (req: Request, res: Response) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ message: 'Code is required.' });
+
+    const [rows] = await db.query<RowDataPacket[]>('SELECT id FROM admin_codes WHERE code = ? AND used = 0', [code.toUpperCase()]);
+    if (!rows.length) return res.status(400).json({ message: 'Invalid or used admin code.' });
+
+    await db.query('UPDATE admin_codes SET used = 1 WHERE id = ?', [rows[0].id]);
+    return res.json({ valid: true });
+  } catch (error) {
+    console.error('Error validating admin code:', error);
+    return res.status(500).json({ message: 'Failed to validate admin code.' });
+  }
+});
+
+// POST /api/users/validate-reset-token
+router.post('/validate-reset-token', async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: 'Token is required.' });
+
+    const [rows] = await db.query<RowDataPacket[]>('SELECT email FROM reset_tokens WHERE token = ? AND used = 0', [token]);
+    if (!rows.length) return res.status(400).json({ message: 'Invalid or used reset token.' });
+
+    return res.json({ valid: true, email: rows[0].email });
+  } catch (error) {
+    console.error('Error validating reset token:', error);
+    return res.status(500).json({ message: 'Failed to validate reset token.' });
+  }
+});
+
 export default router;

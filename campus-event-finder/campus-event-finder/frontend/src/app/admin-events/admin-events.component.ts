@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { DatePipe, NgFor, NgIf } from '@angular/common';
+import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -56,7 +56,7 @@ interface AdminEventAnalytics {
   standalone: true,
   templateUrl: './admin-events.component.html',
   styleUrls: ['./admin-events.component.css'],
-  imports: [NgFor, NgIf, FormsModule, DatePipe]
+  imports: [NgFor, NgIf, NgClass, FormsModule, DatePipe]
 })
 export class AdminEventsComponent implements OnInit {
   private readonly router = inject(Router);
@@ -72,6 +72,11 @@ export class AdminEventsComponent implements OnInit {
   readonly fallbackEventImage = 'assets/liceo-logo.png';
 
   currentUser: User | null = null;
+  likedEvents: Set<string> = new Set();
+  statusMessage = '';
+  statusMessageType: 'success' | 'error' | 'info' | null = null;
+  generatedAdminCode: string | null = null;
+  pendingDeleteEventId: string | null = null;
   menuOpen = false;
   editorOpen = false;
   commentsOpen = false;
@@ -158,11 +163,24 @@ export class AdminEventsComponent implements OnInit {
         this.eventCatalog = events;
         this.engagement.primeMetrics(events);
         this.refreshDepartmentEvents();
+        this.loadLikedEvents();
       },
       error: () => {
         this.eventCatalog = [];
         this.events = [];
         this.analyticsEvents = [];
+      }
+    });
+  }
+
+  private loadLikedEvents(): void {
+    if (!this.currentUser) return;
+    this.engagement.getUserLikes(this.currentUser.email).subscribe({
+      next: likedEventIds => {
+        this.likedEvents = new Set(likedEventIds);
+      },
+      error: () => {
+        this.likedEvents = new Set();
       }
     });
   }
@@ -185,6 +203,16 @@ export class AdminEventsComponent implements OnInit {
     this.router.navigate(['/dashboard']);
   }
 
+  private setStatusMessage(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
+    this.statusMessage = message;
+    this.statusMessageType = type;
+  }
+
+  private clearStatusMessage(): void {
+    this.statusMessage = '';
+    this.statusMessageType = null;
+  }
+
   openNotifications(): void {
     this.menuOpen = false;
     this.router.navigate(['/notifications']);
@@ -193,6 +221,37 @@ export class AdminEventsComponent implements OnInit {
   openSettings(): void {
     this.menuOpen = false;
     this.router.navigate(['/settings']);
+  }
+
+  get isMainAdmin(): boolean {
+    return this.authService.isMainAdmin();
+  }
+
+  generateAdminCode(): void {
+    if (!this.isMainAdmin) return;
+    this.authService.generateAdminCode().subscribe({
+      next: (response) => {
+        this.generatedAdminCode = response.code;
+        this.setStatusMessage('A new admin access code has been created. Share it with the new admin user.', 'success');
+      },
+      error: () => {
+        this.setStatusMessage('Failed to generate admin access code.', 'error');
+      }
+    });
+  }
+
+  copyAdminCode(): void {
+    if (!this.generatedAdminCode) return;
+
+    if (navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(this.generatedAdminCode).then(() => {
+        this.setStatusMessage('Admin code copied to clipboard.', 'success');
+      }).catch(() => {
+        this.setStatusMessage('Unable to copy code. Please copy it manually.', 'error');
+      });
+    } else {
+      this.setStatusMessage('Clipboard is unavailable. Please copy the code manually.', 'info');
+    }
   }
 
   get totalPages(): number {
@@ -217,6 +276,7 @@ export class AdminEventsComponent implements OnInit {
   }
 
   openCreate(): void {
+    this.clearStatusMessage();
     this.commentsOpen = false;
     this.commentsEvent = null;
     this.registrationsOpen = false;
@@ -231,6 +291,7 @@ export class AdminEventsComponent implements OnInit {
   startEdit(event: HubEvent): void {
     if (!this.authService.canManageDepartment(event.department)) return;
 
+    this.clearStatusMessage();
     this.commentsOpen = false;
     this.commentsEvent = null;
     this.registrationsOpen = false;
@@ -372,26 +433,39 @@ export class AdminEventsComponent implements OnInit {
     }
   }
 
+  requestDeleteEvent(eventId: string): void {
+    this.clearStatusMessage();
+    this.pendingDeleteEventId = eventId;
+  }
+
+  cancelDeleteEvent(): void {
+    this.pendingDeleteEventId = null;
+  }
+
   deleteEvent(eventId: string): void {
     const target = this.eventCatalog.find(event => event.id === eventId);
     if (!target || !this.authService.canManageDepartment(target.department)) return;
 
-    if (confirm('Are you sure you want to delete this event?')) {
-      this.eventService.deleteEvent(eventId).subscribe({
-        next: () => {
-          this.eventCatalog = this.eventCatalog.filter(event => event.id !== eventId);
-          this.refreshDepartmentEvents();
-          if (this.getEventStatus(target) !== 'draft') {
-            this.notifyDepartmentStudents(
-              target.department,
-              'Event removed',
-              `${target.title} has been removed from the event hub.`,
-              '/dashboard'
-            );
-          }
+    this.eventService.deleteEvent(eventId).subscribe({
+      next: () => {
+        this.pendingDeleteEventId = null;
+        this.eventCatalog = this.eventCatalog.filter(event => event.id !== eventId);
+        this.refreshDepartmentEvents();
+        this.setStatusMessage('Event deleted successfully.', 'success');
+        if (this.getEventStatus(target) !== 'draft') {
+          this.notifyDepartmentStudents(
+            target.department,
+            'Event removed',
+            `${target.title} has been removed from the event hub.`,
+            '/dashboard'
+          );
         }
-      });
-    }
+      },
+      error: () => {
+        this.setStatusMessage('Could not delete the event right now.', 'error');
+        this.pendingDeleteEventId = null;
+      }
+    });
   }
 
   async onImageFileSelected(event: Event): Promise<void> {
@@ -487,6 +561,10 @@ export class AdminEventsComponent implements OnInit {
     return this.engagement.getLikes(eventId);
   }
 
+  isLiked(eventId: string): boolean {
+    return this.likedEvents.has(eventId);
+  }
+
   getComments(eventId: string): number {
     return this.engagement.getCommentCount(eventId);
   }
@@ -496,9 +574,25 @@ export class AdminEventsComponent implements OnInit {
   }
 
   likeEvent(event: HubEvent): void {
-    this.engagement.like(event.id).subscribe({
-      next: () => this.refreshAnalytics()
-    });
+    const user = this.authService.getCurrentUser();
+    if (!user) return;
+
+    const isCurrentlyLiked = this.likedEvents.has(event.id);
+    if (isCurrentlyLiked) {
+      this.engagement.unlike(event.id, user.email).subscribe({
+        next: () => {
+          this.likedEvents.delete(event.id);
+          this.refreshAnalytics();
+        }
+      });
+    } else {
+      this.engagement.like(event.id, user.email).subscribe({
+        next: () => {
+          this.likedEvents.add(event.id);
+          this.refreshAnalytics();
+        }
+      });
+    }
   }
 
   openComments(event: HubEvent): void {
@@ -691,11 +785,12 @@ export class AdminEventsComponent implements OnInit {
         this.engagement.trackShare(event.id).subscribe({
           next: () => this.refreshAnalytics()
         });
-        alert('Event details copied to clipboard!');
+        this.setStatusMessage('Event details copied to clipboard!', 'success');
       }).catch(() => {
+        this.setStatusMessage('Unable to copy the event link. Please try again.', 'error');
       });
     } else {
-      alert('Sharing is not available in this browser.');
+      this.setStatusMessage('Sharing is not available in this browser.', 'error');
     }
   }
 

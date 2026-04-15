@@ -21,6 +21,7 @@ export class LoginComponent implements OnInit {
     password: ['', [Validators.required]]
   });
   errorMessage = '';
+  showPassword = false;
 
   ngOnInit(): void {
     if (this.authService.isLoggedIn()) {
@@ -47,5 +48,9 @@ export class LoginComponent implements OnInit {
 
   onCreateAccount(): void {
     this.router.navigate(['/sign-up']);
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 }

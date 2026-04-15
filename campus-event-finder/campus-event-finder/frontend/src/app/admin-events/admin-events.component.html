@@ -28,20 +28,25 @@
       <h2>{{ currentUser?.department || 'Department' }}</h2>
     </div>
 
-    <div class="title-icons" aria-label="Quick actions">
-      <button type="button" (click)="goHome()" aria-label="Home">
-        <span aria-hidden="true">&#8962;</span>
-      </button>
-      <button type="button" (click)="openCreate()" aria-label="Create event">
-        <span aria-hidden="true">+</span>
-      </button>
-      
-      <button type="button" (click)="openNotifications()" aria-label="Notifications">
-        <span aria-hidden="true">&#128276;</span>
-      </button>
-      <button type="button" (click)="openSettings()" aria-label="Settings">
-        <span aria-hidden="true">&#9881;</span>
-      </button>
+    <div *ngIf="isMainAdmin" class="admin-code-panel">
+      <div class="admin-code-copy">
+        <div>
+          <p class="code-label">Main admin code generator</p>
+          <p class="code-description">Create a one-time admin access code for a new department admin account.</p>
+        </div>
+        <button type="button" class="generate-code-button" (click)="generateAdminCode()">
+          Generate code
+        </button>
+      </div>
+
+      <div *ngIf="generatedAdminCode" class="admin-code-result">
+        <span class="generated-code">{{ generatedAdminCode }}</span>
+        <button type="button" class="copy-code-button" (click)="copyAdminCode()">Copy</button>
+      </div>
+    </div>
+
+    <div *ngIf="statusMessage" class="status-message" [ngClass]="statusMessageType">
+      {{ statusMessage }}
     </div>
   </section>
 
@@ -255,7 +260,7 @@
             <h4>{{ event.title }}</h4>
 
             <div class="likes" aria-label="Event metrics">
-              <button type="button" class="like-btn" (click)="likeEvent(event)" aria-label="Like event">
+              <button type="button" class="like-btn" [class.liked]="isLiked(event.id)" (click)="likeEvent(event)" aria-label="Like event">
                 <span aria-hidden="true">&#10084;</span>
               </button>
               <span class="metric-value">{{ formatCount(getLikes(event.id)) }}</span>
@@ -307,10 +312,20 @@
                 {{ getEventStatus(event) === 'inactive' ? 'Make Active' : 'Make Inactive' }}
               </button>
 
-              <button type="button" class="danger" (click)="deleteEvent(event.id)" aria-label="Delete event">
-                <span aria-hidden="true">&#128465;</span>
-                <span class="action-text">Delete<br />Event</span>
-              </button>
+              <ng-container *ngIf="pendingDeleteEventId !== event.id; else confirmEventDelete">
+                <button type="button" class="danger" (click)="requestDeleteEvent(event.id)" aria-label="Delete event">
+                  <span aria-hidden="true">&#128465;</span>
+                  <span class="action-text">Delete<br />Event</span>
+                </button>
+              </ng-container>
+
+              <ng-template #confirmEventDelete>
+                <div class="confirm-delete">
+                  <span>Delete this event?</span>
+                  <button type="button" class="danger" (click)="deleteEvent(event.id)">Yes</button>
+                  <button type="button" class="edit" (click)="cancelDeleteEvent()">Cancel</button>
+                </div>
+              </ng-template>
 
               <button type="button" class="edit" (click)="startEdit(event)" aria-label="Edit event">
                 <span aria-hidden="true">&#9998;</span>

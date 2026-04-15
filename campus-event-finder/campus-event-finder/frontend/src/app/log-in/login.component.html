@@ -23,13 +23,21 @@
 
       <div class="input-wrapper">
         <input
-          type="password"
+          [type]="showPassword ? 'text' : 'password'"
           placeholder="Password"
           formControlName="password"
-          class="form-input"
+          class="form-input password-input"
           autocomplete="current-password"
           id="login-password"
         />
+        <button
+          type="button"
+          class="password-toggle"
+          (click)="togglePasswordVisibility()"
+          [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+        >
+          <span aria-hidden="true">{{ showPassword ? '🙈' : '👁️' }}</span>
+        </button>
       </div>
 
       <p class="message error" *ngIf="errorMessage">{{ errorMessage }}</p>

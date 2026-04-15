@@ -29,6 +29,8 @@ export class DashboardComponent implements OnInit {
   menuOpen = false;
   selectedEvent: HubEvent | null = null;
   currentUser: User | null = null;
+  statusMessage = '';
+  statusMessageType: 'success' | 'error' | 'info' | null = null;
 
   private eventCatalog: EventWithMetrics[] = [];
   allEvents: HubEvent[] = [];
@@ -37,6 +39,8 @@ export class DashboardComponent implements OnInit {
 
   commentText = '';
   selectedEventComments: EventComment[] = [];
+
+  likedEvents: Set<string> = new Set();
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
@@ -51,12 +55,25 @@ export class DashboardComponent implements OnInit {
         this.allEvents = sortEventsForDisplay(this.eventCatalog);
         this.events = this.allEvents.filter(event => (event.status ?? 'active') === 'active');
         this.featuredEvents = this.events.slice(0, 4);
+        this.loadLikedEvents();
       },
       error: () => {
         this.eventCatalog = [];
         this.allEvents = [];
         this.events = [];
         this.featuredEvents = [];
+      }
+    });
+  }
+
+  private loadLikedEvents(): void {
+    if (!this.currentUser) return;
+    this.engagement.getUserLikes(this.currentUser.email).subscribe({
+      next: likedEventIds => {
+        this.likedEvents = new Set(likedEventIds);
+      },
+      error: () => {
+        this.likedEvents = new Set();
       }
     });
   }
@@ -72,6 +89,7 @@ export class DashboardComponent implements OnInit {
 
   openDetails(event: HubEvent): void {
     this.selectedEvent = event;
+    this.clearStatusMessage();
     this.commentText = '';
     this.selectedEventComments = [];
     this.engagement.fetchComments(event.id).subscribe({
@@ -91,12 +109,54 @@ export class DashboardComponent implements OnInit {
   }
 
   likeEvent(event: HubEvent): void {
-    this.engagement.like(event.id).subscribe();
+    const user = this.authService.getCurrentUser();
+    if (!user) return;
+
+    const isCurrentlyLiked = this.likedEvents.has(event.id);
+    if (isCurrentlyLiked) {
+      this.engagement.unlike(event.id, user.email).subscribe(() => {
+        this.likedEvents.delete(event.id);
+      });
+    } else {
+      this.engagement.like(event.id, user.email).subscribe(() => {
+        this.likedEvents.add(event.id);
+      });
+    }
+  }
+
+  isLiked(eventId: string): boolean {
+    return this.likedEvents.has(eventId);
+
+    // For simplicity, assume we check on demand, but to avoid multiple calls, perhaps cache or call once per event
+    // For now, since it's toggle, we can track locally or call API each time
+    // But to optimize, maybe add a map in component
+    // For this implementation, let's call the API each time isLiked is called, but that's inefficient.
+    // Better to load liked status when loading events.
+
+    // For now, since the user wants toggle, and we have the logic, but to make it work, perhaps use a set for liked events in component.
+    // Actually, let's modify to use the service's isLiked, but since it's observable, need to handle async.
+
+    // To keep it simple, let's add a likedEvents set in the component, and update it on like/unlike.
+    // But for initial load, need to check for each event.
+
+    // For this task, let's assume we call isLiked once per event when needed, but since it's in template, better to have a property.
+
+    // Let's add a likedEvents Map in the component.
   }
 
   navigateTo(route: string): void {
     this.menuOpen = false;
     this.router.navigate([route]);
+  }
+
+  private setStatusMessage(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
+    this.statusMessage = message;
+    this.statusMessageType = type;
+  }
+
+  private clearStatusMessage(): void {
+    this.statusMessage = '';
+    this.statusMessageType = null;
   }
 
   getLikes(eventId: string): number {
@@ -125,11 +185,12 @@ export class DashboardComponent implements OnInit {
       const shareText = `${event.title}\n${event.description}\n${window.location.href}`;
       void navigator.clipboard.writeText(shareText).then(() => {
         this.engagement.trackShare(event.id).subscribe();
-        alert('Event details copied to clipboard!');
+        this.setStatusMessage('Event details copied to clipboard!', 'success');
       }).catch(() => {
+        this.setStatusMessage('Unable to copy the event link. Please try again.', 'error');
       });
     } else {
-      alert('Sharing is not available in this browser.');
+      this.setStatusMessage('Sharing is not available in this browser.', 'error');
     }
   }
 
@@ -181,12 +242,12 @@ export class DashboardComponent implements OnInit {
 
   registerForEvent(event: HubEvent): void {
     if (!this.currentUser) {
-      alert('Please log in to register for events.');
+      this.setStatusMessage('Please log in to register for events.', 'error');
       return;
     }
 
     if (event.registrations >= event.capacity) {
-      alert('Event is at full capacity!');
+      this.setStatusMessage('Event is at full capacity!', 'error');
       return;
     }
 
@@ -216,11 +277,11 @@ export class DashboardComponent implements OnInit {
             category: 'registration',
             route: '/admin-events'
           });
-          alert(`Successfully registered for ${event.title}!`);
+          this.setStatusMessage(`Successfully registered for ${event.title}!`, 'success');
         },
         error: (err) => {
           const message = err?.error?.message ?? 'Unable to register for this event.';
-          alert(message);
+          this.setStatusMessage(message, 'error');
         }
       });
   }

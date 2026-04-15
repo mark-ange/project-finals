@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { map, tap, catchError } from 'rxjs/operators';
 import {
   DEMO_DEPARTMENT_ACCOUNTS,
   isKnownDepartment,
@@ -36,6 +38,7 @@ export interface RegisterData {
   providedIn: 'root'
 })
 export class AuthService {
+  private readonly apiUrl = 'http://localhost:3000/api/users';
   private readonly usersStorageKey = 'users';
   private readonly currentUserStorageKey = 'currentUser';
 
@@ -44,7 +47,7 @@ export class AuthService {
 
   private users: User[] = [];
 
-  constructor() {
+  constructor(private http: HttpClient) {
     this.loadUsers();
     this.loadCurrentUser();
   }
@@ -71,6 +74,45 @@ export class AuthService {
     }
   }
 
+  private loadAdminCodes(): void {
+    const storedCodes = localStorage.getItem(this.adminCodesStorageKey);
+    if (storedCodes) {
+      try {
+        const parsed = JSON.parse(storedCodes) as unknown;
+        if (Array.isArray(parsed)) {
+          this.adminCodes = parsed.filter(code => typeof code === 'string');
+        }
+      } catch {
+        this.adminCodes = [];
+      }
+    }
+
+    if (!this.adminCodes.length) {
+      this.adminCodes = ['ADMIN123'];
+      this.saveAdminCodes();
+    }
+  }
+
+  private loadResetTokens(): void {
+    const storedTokens = localStorage.getItem(this.resetTokensStorageKey);
+    if (storedTokens) {
+      try {
+        const parsed = JSON.parse(storedTokens) as unknown;
+        if (Array.isArray(parsed)) {
+          this.resetTokens = parsed.filter(
+            token => token && typeof token === 'object'
+          ) as Array<{ email: string; token: string; createdAt: string }>;
+        }
+      } catch {
+        this.resetTokens = [];
+      }
+    }
+  }
+
+  private saveResetTokens(): void {
+    localStorage.setItem(this.resetTokensStorageKey, JSON.stringify(this.resetTokens));
+  }
+
   private loadCurrentUser(): void {
     const storedCurrentUser = localStorage.getItem(this.currentUserStorageKey);
     if (!storedCurrentUser) return;
@@ -90,52 +132,78 @@ export class AuthService {
     localStorage.setItem(this.usersStorageKey, JSON.stringify(this.users));
   }
 
-  register(data: RegisterData): { success: boolean; message: string } {
+  private saveAdminCodes(): void {
+    localStorage.setItem(this.adminCodesStorageKey, JSON.stringify(this.adminCodes));
+  }
+
+  register(data: RegisterData): Observable<{ success: boolean; message: string }> {
     const department = normalizeDepartment(data.department);
     if (!isKnownDepartment(department)) {
-      return { success: false, message: 'Please choose a valid department' };
+      return of({ success: false, message: 'Please choose a valid department' });
     }
 
-    const existingUser = this.users.find(u => u.email === data.email);
+    const normalizedEmail = this.normalizeEmail(data.email);
+    const existingUser = this.users.find(u => u.email === normalizedEmail);
 
     if (existingUser) {
-      return { success: false, message: 'Email already registered' };
+      return of({ success: false, message: 'Email already registered' });
     }
 
-    if (!data.email.endsWith('@liceo.edu.ph')) {
-      return { success: false, message: 'Use your official @liceo.edu.ph email' };
+    if (!this.isLiceoEmail(data.email)) {
+      return of({ success: false, message: 'Use your official @liceo.edu.ph email' });
     }
+
+    const email = this.normalizeEmail(data.email);
 
     let role: UserRole = 'student';
 
-    if (data.adminCode === 'ADMIN123') {
-      role = 'admin';
+    if (data.adminCode) {
+      return this.http.post<{ valid: boolean }>(`${this.apiUrl}/validate-admin-code`, { code: data.adminCode }).pipe(
+        map(response => {
+          if (!response.valid) {
+            return { success: false, message: 'Invalid admin code' };
+          }
+          role = 'admin';
+          const newUser: User = {
+            id: this.generateId(),
+            fullName: data.fullName,
+            email,
+            password: data.password,
+            department,
+            role,
+            createdAt: new Date()
+          };
+          this.users.push(newUser);
+          this.saveUsers();
+          return { success: true, message: 'Registration successful' };
+        }),
+        catchError(() => of({ success: false, message: 'Failed to validate admin code' }))
+      );
+    } else {
+      const newUser: User = {
+        id: this.generateId(),
+        fullName: data.fullName,
+        email,
+        password: data.password,
+        department,
+        role,
+        createdAt: new Date()
+      };
+      this.users.push(newUser);
+      this.saveUsers();
+      return of({ success: true, message: 'Registration successful' });
     }
-
-    if (data.adminCode && data.adminCode !== 'ADMIN123') {
-      return { success: false, message: 'Invalid admin code' };
-    }
-
-    const newUser: User = {
-      id: this.generateId(),
-      fullName: data.fullName,
-      email: data.email,
-      password: data.password,
-      department,
-      role,
-      createdAt: new Date()
-    };
-
-    this.users.push(newUser);
-    this.saveUsers();
-
-    return { success: true, message: 'Registration successful' };
   }
 
   login(credentials: LoginCredentials): { success: boolean; message: string } {
+    if (!this.isLiceoEmail(credentials.email)) {
+      return { success: false, message: 'Please use your official @liceo.edu.ph email to log in.' };
+    }
+
+    const normalizedEmail = this.normalizeEmail(credentials.email);
     const user = this.users.find(
       candidate =>
-        candidate.email === credentials.email && candidate.password === credentials.password
+        candidate.email === normalizedEmail && candidate.password === credentials.password
     );
 
     if (!user) {
@@ -148,8 +216,73 @@ export class AuthService {
     return { success: true, message: 'Login successful' };
   }
 
+  private isLiceoEmail(email: string): boolean {
+    return typeof email === 'string' && this.normalizeEmail(email).endsWith('@liceo.edu.ph');
+  }
+
+  private normalizeAdminCode(code: string): string {
+    return typeof code === 'string' ? code.trim().toUpperCase() : '';
+  }
+
+  private normalizeEmail(email: string): string {
+    return typeof email === 'string' ? email.trim().toLowerCase() : '';
+  }
+
+  private isValidAdminCode(code: string): boolean {
+    return this.adminCodes.includes(this.normalizeAdminCode(code));
+  }
+
+  private consumeAdminCode(code: string): boolean {
+    const normalizedCode = this.normalizeAdminCode(code);
+    const index = this.adminCodes.indexOf(normalizedCode);
+    if (index === -1) {
+      return false;
+    }
+
+    this.adminCodes.splice(index, 1);
+    this.saveAdminCodes();
+    return true;
+  }
+
+  generateAdminCode(): Observable<{ code: string }> {
+    const currentUser = this.currentUserSubject.value;
+    if (!currentUser) throw new Error('No current user');
+
+    return this.http.post<{ code: string }>(`${this.apiUrl}/admin-codes`, { created_by: currentUser.email });
+  }
+
+  getAdminCodes(): Observable<{ codes: Array<{ code: string; created_by: string; created_at: string }> }> {
+    return this.http.get<{ codes: Array<{ code: string; created_by: string; created_at: string }> }>(`${this.apiUrl}/admin-codes`);
+  }
+
+  requestPasswordReset(email: string): Observable<{ success: boolean; message: string; link?: string }> {
+    return this.http.post<{ token: string; link: string }>(`${this.apiUrl}/reset-tokens`, { email }).pipe(
+      map(response => ({
+        success: true,
+        message: `Password reset link generated successfully. Share this with the user: ${response.link}`,
+        link: response.link
+      })),
+      catchError(() => of({
+        success: false,
+        message: 'Failed to generate reset link.'
+      }))
+    );
+  }
+
+  private generateResetToken(email: string): string {
+    const token = `RESET-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+    this.resetTokens.push({
+      email,
+      token,
+      createdAt: new Date().toISOString()
+    });
+    this.saveResetTokens();
+    return token;
+  }
+
   isEmailRegistered(email: string): boolean {
-    return this.users.some(user => user.email === email);
+    const normalizedEmail = this.normalizeEmail(email);
+    return this.users.some(user => user.email === normalizedEmail);
   }
 
   logout(): void {
@@ -236,6 +369,7 @@ export class AuthService {
   private normalizeUser(user: User): User {
     return {
       ...user,
+      email: this.normalizeEmail(user.email),
       department: normalizeDepartment(user.department) || user.department || 'Unknown'
     };
   }

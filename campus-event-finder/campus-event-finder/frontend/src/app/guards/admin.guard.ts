@@ -9,6 +9,5 @@ export const adminGuard: CanActivateFn = () => {
   if (!authService.isLoggedIn()) return router.parseUrl('/login');
   if (authService.isAdmin()) return true;
 
-  alert('Admin access only. Log in with the admin code to continue.');
   return router.parseUrl('/dashboard');
 };

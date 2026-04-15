@@ -100,12 +100,33 @@ export class EventEngagementService {
     return this.attendance.get(event.id) ?? 0;
   }
 
-  like(eventId: string): Observable<number> {
-    return this.http.post<{ likes: number }>(`${this.apiUrl}/${eventId}/likes`, {}).pipe(
+  like(eventId: string, userEmail: string): Observable<number> {
+    return this.http.post<{ likes: number }>(`${this.apiUrl}/${eventId}/likes`, { user_email: userEmail }).pipe(
       tap(response => {
         this.likes.set(eventId, response.likes);
       }),
       map(response => response.likes)
+    );
+  }
+
+  unlike(eventId: string, userEmail: string): Observable<number> {
+    return this.http.delete<{ likes: number }>(`${this.apiUrl}/${eventId}/likes`, { body: { user_email: userEmail } }).pipe(
+      tap(response => {
+        this.likes.set(eventId, response.likes);
+      }),
+      map(response => response.likes)
+    );
+  }
+
+  isLiked(eventId: string, userEmail: string): Observable<boolean> {
+    return this.http.get<{ liked: boolean }>(`${this.apiUrl}/${eventId}/liked`, { params: { user_email: userEmail } }).pipe(
+      map(response => response.liked)
+    );
+  }
+
+  getUserLikes(userEmail: string): Observable<string[]> {
+    return this.http.get<{ likedEvents: string[] }>(`${this.apiUrl}/user/${userEmail}/likes`).pipe(
+      map(response => response.likedEvents)
     );
   }
 

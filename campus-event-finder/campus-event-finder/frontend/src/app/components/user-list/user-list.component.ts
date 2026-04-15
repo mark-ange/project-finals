@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { NgFor, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { User } from '../../models/user.model';
 
@@ -13,10 +14,14 @@ import { User } from '../../models/user.model';
 })
 export class UserListComponent implements OnInit {
   private readonly userService = inject(UserService);
+  readonly authService = inject(AuthService);
 
   users: User[] = [];
   loading = false;
   errorMessage = '';
+  resetMessage = '';
+  resetMessageType: 'success' | 'error' | 'info' | null = null;
+  pendingDeleteUserId: number | null = null;
 
   ngOnInit(): void {
     this.loadUsers();
@@ -38,16 +43,36 @@ export class UserListComponent implements OnInit {
     });
   }
 
-  deleteUser(user: User): void {
-    const confirmDelete = window.confirm(`Delete ${user.name}?`);
-    if (!confirmDelete) return;
+  requestDeleteUser(user: User): void {
+    this.pendingDeleteUserId = user.id;
+    this.errorMessage = '';
+  }
+
+  confirmDeleteUser(user: User): void {
+    if (this.pendingDeleteUserId !== user.id) return;
 
     this.userService.deleteUser(user.id).subscribe({
-      next: () => this.loadUsers(),
+      next: () => {
+        this.pendingDeleteUserId = null;
+        this.loadUsers();
+      },
       error: () => {
         this.errorMessage = 'Unable to delete the user.';
       }
     });
+  }
+
+  cancelDelete(): void {
+    this.pendingDeleteUserId = null;
+  }
+
+  sendResetLink(user: User): void {
+    this.resetMessage = '';
+    this.resetMessageType = null;
+
+    const result = this.authService.requestPasswordReset(user.email);
+    this.resetMessage = result.message;
+    this.resetMessageType = result.success ? 'success' : 'error';
   }
 
   trackByUserId(index: number, user: User): number {

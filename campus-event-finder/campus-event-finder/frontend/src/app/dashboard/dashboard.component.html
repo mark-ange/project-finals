@@ -15,6 +15,7 @@
     </button>
   </header>
 
+ 
   <nav class="menu-strip" *ngIf="menuOpen" aria-label="Dashboard menu">
     <button type="button" (click)="navigateTo('/dashboard')">Home</button>
     <button
@@ -120,6 +121,7 @@
               <button
                 type="button"
                 class="icon-like"
+                [class.liked]="isLiked(event.id)"
                 (click)="likeEvent(event); $event.stopPropagation()"
                 aria-label="Like event"
               >

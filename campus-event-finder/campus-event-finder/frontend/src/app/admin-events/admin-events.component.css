@@ -156,6 +156,92 @@
   letter-spacing: 0.5px;
 }
 
+.admin-code-panel {
+  width: 100%;
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  padding: 16px 18px;
+  box-sizing: border-box;
+}
+
+.admin-code-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.code-label {
+  margin: 0;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #ffe4b2;
+}
+
+.code-description {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.4;
+}
+
+.generate-code-button,
+.copy-code-button {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.generate-code-button {
+  background: #ffd400;
+  color: #3a1800;
+}
+
+.generate-code-button:hover {
+  transform: translateY(-1px);
+  background: #ffea6d;
+}
+
+.admin-code-result {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.generated-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+}
+
+.copy-code-button {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+}
+
+.copy-code-button:hover {
+  background: rgba(255,255,255,0.26);
+}
+
 /* ─── Main Content ──────────────────────────────────────── */
 main {
   padding: 24px 20px 40px;
@@ -570,6 +656,12 @@ main {
   transform: scale(1.2);
 }
 
+.like-btn.liked {
+  color: #e74c3c;
+  background: rgba(231, 76, 60, 0.1);
+  border-radius: 6px;
+}
+
 .metric-value {
   font-size: 12px;
   font-weight: 700;
@@ -736,6 +828,18 @@ main {
 
 .edit {
   color: #2563eb;
+}
+
+.confirm-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.confirm-delete span {
+  color: #4b5563;
+  font-size: 12px;
 }
 
 .edit:hover {

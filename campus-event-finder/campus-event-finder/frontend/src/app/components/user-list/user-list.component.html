@@ -9,6 +9,9 @@
 
   <div *ngIf="loading" class="status">Loading users...</div>
   <div *ngIf="errorMessage" class="status error">{{ errorMessage }}</div>
+  <div *ngIf="resetMessage" class="status" [class.error]="resetMessageType === 'error'" [class.success]="resetMessageType === 'success'">
+    {{ resetMessage }}
+  </div>
 
   <table *ngIf="!loading && users.length" class="user-table">
     <thead>
@@ -26,7 +29,22 @@
         <td>{{ user.email }}</td>
         <td class="actions">
           <a class="btn" [routerLink]="['/users', user.id, 'edit']">Edit</a>
-          <button class="btn danger" type="button" (click)="deleteUser(user)">Delete</button>
+          <button
+            *ngIf="authService.isMainAdmin()"
+            class="btn secondary"
+            type="button"
+            (click)="sendResetLink(user)"
+          >
+            Send reset link
+          </button>
+          <ng-container *ngIf="pendingDeleteUserId !== user.id; else userDeleteConfirm">
+            <button class="btn danger" type="button" (click)="requestDeleteUser(user)">Delete</button>
+          </ng-container>
+          <ng-template #userDeleteConfirm>
+            <span class="delete-prompt">Delete {{ user.name }}?</span>
+            <button class="btn danger" type="button" (click)="confirmDeleteUser(user)">Yes</button>
+            <button class="btn" type="button" (click)="cancelDelete()">Cancel</button>
+          </ng-template>
         </td>
       </tr>
     </tbody>

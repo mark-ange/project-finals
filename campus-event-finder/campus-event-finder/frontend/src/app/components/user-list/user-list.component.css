@@ -68,6 +68,16 @@
   border-color: #1e3a8a;
 }
 
+.btn.secondary {
+  background: #f8fafc;
+  border-color: #cbd5f5;
+  color: #1f2937;
+}
+
+.btn.secondary:hover {
+  background: #eef2ff;
+}
+
 .btn.danger {
   border-color: #fca5a5;
   color: #b91c1c;
@@ -78,6 +88,16 @@
   color: #1f2937;
 }
 
+.status.success {
+  color: #047857;
+}
+
 .status.error {
   color: #b91c1c;
+}
+
+.delete-prompt {
+  margin-right: 8px;
+  font-size: 0.95rem;
+  color: #4b5563;
 }

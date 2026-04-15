@@ -1,9 +1,11 @@
 -- Campus Event Finder Full Schema (Flexible Admin Version)
 
 -- Reset tables
+DROP TABLE IF EXISTS user_likes;
 DROP TABLE IF EXISTS event_registrations;
 DROP TABLE IF EXISTS event_comments;
 DROP TABLE IF EXISTS event_metrics;
+DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS events;
 
 -- 1. Events Table
@@ -21,6 +23,17 @@ CREATE TABLE IF NOT EXISTS events (
   department VARCHAR(255) NOT NULL,
   capacity INT NULL,             -- Optional
   status VARCHAR(20) NOT NULL DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Users Table
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(150) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  department VARCHAR(120) NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'student',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -59,4 +72,33 @@ CREATE TABLE IF NOT EXISTS event_registrations (
   UNIQUE KEY uniq_event_user (event_id, user_id),
   CONSTRAINT fk_event_registrations_event
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 5. User Likes Table
+CREATE TABLE IF NOT EXISTS user_likes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_email VARCHAR(150) NOT NULL,
+  event_id VARCHAR(32) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_user_event (user_email, event_id),
+  CONSTRAINT fk_user_likes_event
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 6. Admin Codes Table
+CREATE TABLE IF NOT EXISTS admin_codes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(50) NOT NULL UNIQUE,
+  created_by VARCHAR(150) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  used TINYINT(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 7. Reset Tokens Table
+CREATE TABLE IF NOT EXISTS reset_tokens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(150) NOT NULL,
+  token VARCHAR(50) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  used TINYINT(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
