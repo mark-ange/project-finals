@@ -249,14 +249,14 @@ export class DashboardComponent implements OnInit {
           this.commentReplyTargetId = null;
           this.commentReplyTargetAuthor = null;
           this.selectedEventComments = [comment, ...this.selectedEventComments];
-          const adminRecipients = this.authService
-            .getDepartmentAdmins(selectedEvent.department)
-            .filter(user => user.id !== this.currentUser?.id);
-          this.notifications.notifyUsers(adminRecipients, {
-            title: 'New event comment',
-            message: `${author} commented on ${selectedEvent.title}.`,
-            category: 'comment',
-            route: '/admin-events'
+          this.authService.getDepartmentAdmins(selectedEvent.department).subscribe(admins => {
+            const adminRecipients = admins.filter(user => user.id !== this.currentUser?.id);
+            this.notifications.notifyUsers(adminRecipients, {
+              title: 'New event comment',
+              message: `${author} commented on ${selectedEvent.title}.`,
+              category: 'comment',
+              route: '/admin-events'
+            });
           });
         }
       });
@@ -328,20 +328,20 @@ export class DashboardComponent implements OnInit {
       .subscribe({
         next: () => {
           event.registrations += 1;
-          const adminRecipients = this.authService
-            .getDepartmentAdmins(event.department)
-            .filter(user => user.id !== this.currentUser?.id);
           this.notifications.notifyUser(this.currentUser, {
             title: 'Registration confirmed',
             message: `You are registered for ${event.title} on ${event.date}.`,
             category: 'registration',
             route: '/notifications'
           });
-          this.notifications.notifyUsers(adminRecipients, {
-            title: 'New event registration',
-            message: `${this.currentUser?.fullName} registered for ${event.title}.`,
-            category: 'registration',
-            route: '/admin-events'
+          this.authService.getDepartmentAdmins(event.department).subscribe(admins => {
+            const adminRecipients = admins.filter(user => user.id !== this.currentUser?.id);
+            this.notifications.notifyUsers(adminRecipients, {
+              title: 'New event registration',
+              message: `${this.currentUser?.fullName} registered for ${event.title}.`,
+              category: 'registration',
+              route: '/admin-events'
+            });
           });
           this.setStatusMessage(`Successfully registered for ${event.title}!`, 'success');
         },

@@ -527,10 +527,10 @@
       <div class="registration-list" *ngIf="eventRegistrations.length > 0; else noRegistrations">
         <div class="registration-row" *ngFor="let registration of eventRegistrations">
           <div class="registration-info">
-            <strong>{{ registration.name }}</strong>
-            <span>{{ registration.email }}</span>
-            <span>{{ registration.department }}</span>
-            <span>{{ registration.registeredAt | date: 'short' }}</span>
+            <strong>Name: {{ registration.name }}</strong>
+            <span>Email: {{ registration.email }}</span>
+            <span>Dept: {{ registration.department }}</span>
+            <span class="registration-time">Registered: {{ registration.registeredAt | date: 'short' }}</span>
           </div>
           <label class="attendance-toggle">
             <input

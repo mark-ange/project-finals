@@ -36,13 +36,13 @@ export class LoginComponent implements OnInit {
         password: this.loginForm.value.password
       };
 
-      const result = this.authService.login(credentials);
-      
-      if (result.success) {
-        this.router.navigate(['/dashboard']);
-      } else {
-        this.errorMessage = result.message;
-      }
+      this.authService.login(credentials).subscribe(result => {
+        if (result.success) {
+          this.router.navigate(['/dashboard']);
+        } else {
+          this.errorMessage = result.message;
+        }
+      });
     }
   }
 

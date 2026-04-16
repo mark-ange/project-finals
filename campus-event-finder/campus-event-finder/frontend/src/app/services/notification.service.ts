@@ -127,113 +127,114 @@ export class NotificationService {
     const existing = this.loadAllNotifications();
     if (existing.length > 0) return;
 
-    const users = this.authService.getAllUsers();
-    if (!users.length) return;
+    this.authService.getAllUsers().subscribe(users => {
+      if (!users.length) return;
 
-    const now = Date.now();
-    const buildNotification = (
-      user: User,
-      title: string,
-      message: string,
-      category: NotificationCategory,
-      minutesAgo: number,
-      route: string
-    ): AppNotification => ({
-      id: this.generateId(),
-      recipientUserId: user.id,
-      title,
-      message,
-      category,
-      createdAt: new Date(now - minutesAgo * 60 * 1000).toISOString(),
-      read: minutesAgo > 60,
-      route
+      const now = Date.now();
+      const buildNotification = (
+        user: User,
+        title: string,
+        message: string,
+        category: NotificationCategory,
+        minutesAgo: number,
+        route: string
+      ): AppNotification => ({
+        id: this.generateId(),
+        recipientUserId: user.id,
+        title,
+        message,
+        category,
+        createdAt: new Date(now - minutesAgo * 60 * 1000).toISOString(),
+        read: minutesAgo > 60,
+        route
+      });
+
+      const notifications: AppNotification[] = [];
+      const admins = users.filter(user => user.role === 'admin' || user.role === 'main-admin');
+      const students = users.filter(user => user.role === 'student').slice(0, 8);
+      const systemUser = users.find(user => user.role === 'main-admin');
+
+      if (systemUser) {
+        notifications.push(
+          buildNotification(
+            systemUser,
+            'Platform analytics are live',
+            'Your admin dashboard now shows real-time engagement, attendance, and registration analytics.',
+            'system',
+            5,
+            '/notifications'
+          ),
+          buildNotification(
+            systemUser,
+            'New event synchronization',
+            'All department events have been synced successfully with the hub.',
+            'system',
+            18,
+            '/notifications'
+          ),
+          buildNotification(
+            systemUser,
+            'User activity report available',
+            'Open the notifications panel to review recent registration and attendance activity.',
+            'system',
+            35,
+            '/notifications'
+          )
+        );
+      }
+
+      admins.slice(0, 6).forEach((admin, index) => {
+        notifications.push(
+          buildNotification(
+            admin,
+            'New registration received',
+            `A student has registered for the latest department event.`,
+            'registration',
+            10 + index * 8,
+            '/notifications'
+          ),
+          buildNotification(
+            admin,
+            'New comment on your event',
+            `A student commented on the event announcement. Check the admin panel for details.`,
+            'comment',
+            22 + index * 6,
+            '/notifications'
+          ),
+          buildNotification(
+            admin,
+            'Attendance updated',
+            `Attendance records were updated for your department's active event.`,
+            'attendance',
+            40 + index * 5,
+            '/notifications'
+          )
+        );
+      });
+
+      students.forEach((student, index) => {
+        notifications.push(
+          buildNotification(
+            student,
+            'Event registration confirmed',
+            'You are now registered for the upcoming campus event. View details in your dashboard.',
+            'event',
+            12 + index * 4,
+            '/dashboard'
+          ),
+          buildNotification(
+            student,
+            'Comment reply received',
+            'An event organizer replied to your comment. Open the event page to read it.',
+            'comment',
+            50 + index * 3,
+            '/notifications'
+          )
+        );
+      });
+
+      this.saveAllNotifications(notifications);
     });
-
-    const notifications: AppNotification[] = [];
-    const admins = users.filter(user => user.role === 'admin' || user.role === 'main-admin');
-    const students = users.filter(user => user.role === 'student').slice(0, 8);
-    const systemUser = users.find(user => user.role === 'main-admin');
-
-    if (systemUser) {
-      notifications.push(
-        buildNotification(
-          systemUser,
-          'Platform analytics are live',
-          'Your admin dashboard now shows real-time engagement, attendance, and registration analytics.',
-          'system',
-          5,
-          '/notifications'
-        ),
-        buildNotification(
-          systemUser,
-          'New event synchronization',
-          'All department events have been synced successfully with the hub.',
-          'system',
-          18,
-          '/notifications'
-        ),
-        buildNotification(
-          systemUser,
-          'User activity report available',
-          'Open the notifications panel to review recent registration and attendance activity.',
-          'system',
-          35,
-          '/notifications'
-        )
-      );
-    }
-
-    admins.slice(0, 6).forEach((admin, index) => {
-      notifications.push(
-        buildNotification(
-          admin,
-          'New registration received',
-          `A student has registered for the latest department event.`,
-          'registration',
-          10 + index * 8,
-          '/notifications'
-        ),
-        buildNotification(
-          admin,
-          'New comment on your event',
-          `A student commented on the event announcement. Check the admin panel for details.`,
-          'comment',
-          22 + index * 6,
-          '/notifications'
-        ),
-        buildNotification(
-          admin,
-          'Attendance updated',
-          `Attendance records were updated for your department's active event.`,
-          'attendance',
-          40 + index * 5,
-          '/notifications'
-        )
-      );
-    });
-
-    students.forEach((student, index) => {
-      notifications.push(
-        buildNotification(
-          student,
-          'Event registration confirmed',
-          'You are now registered for the upcoming campus event. View details in your dashboard.',
-          'event',
-          12 + index * 4,
-          '/dashboard'
-        ),
-        buildNotification(
-          student,
-          'Comment reply received',
-          'An event organizer replied to your comment. Open the event page to read it.',
-          'comment',
-          50 + index * 3,
-          '/notifications'
-        )
-      );
-    });
-
-    this.saveAllNotifications(notifications);
   }
 
   private seedNotificationsForUser(user: User | null | undefined): void {

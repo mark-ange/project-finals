@@ -48,6 +48,8 @@
         class="notification-item"
         *ngFor="let notification of notifications; trackBy: trackByNotificationId"
         [class.unread]="!notification.read"
+        (click)="viewNotification(notification)"
+        style="cursor: pointer;"
       >
         <div class="notification-meta">
           <span class="category-pill">{{ getCategoryLabel(notification.category) }}</span>
@@ -62,15 +64,15 @@
             type="button"
             class="notification-btn"
             *ngIf="notification.route"
-            (click)="openNotification(notification)"
+            (click)="openNotification(notification); $event.stopPropagation()"
           >
-            Open
+            Go to link
           </button>
           <button
             type="button"
             class="notification-btn ghost"
             *ngIf="!notification.read"
-            (click)="markAsRead(notification.id)"
+            (click)="markAsRead(notification.id); $event.stopPropagation()"
           >
             Mark as read
           </button>
@@ -85,4 +87,35 @@
       </div>
     </ng-template>
   </section>
+
+  <!-- Notification View Modal -->
+  <div class="modal-backdrop" *ngIf="selectedNotification" (click)="closeNotificationDetails()">
+    <div class="modal" (click)="$event.stopPropagation()" style="max-width: 500px; padding: 2rem; background: var(--bg-card, #fff); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+      <h3 class="modal-title" style="margin-top: 0; font-size: 1.25rem;">{{ selectedNotification.title }}</h3>
+      <p class="modal-meta" style="color: #666; font-size: 0.85rem; margin-bottom: 1rem;">
+        {{ getCategoryLabel(selectedNotification.category) }} • {{ selectedNotification.createdAt | date: 'medium' }}
+      </p>
+      <p class="modal-message" style="margin-bottom: 1.5rem; line-height: 1.6; white-space: pre-wrap;">{{ selectedNotification.message }}</p>
+      
+      <div class="editor-actions" style="display: flex; gap: 1rem; justify-content: flex-end;">
+        <button 
+          *ngIf="selectedNotification.route" 
+          type="button" 
+          class="primary" 
+          (click)="openNotification(selectedNotification)"
+          style="padding: 0.5rem 1rem; background: var(--primary, #0056b3); color: white; border: none; border-radius: 4px; cursor: pointer;"
+        >
+          Go to link
+        </button>
+        <button 
+          type="button" 
+          class="secondary" 
+          (click)="closeNotificationDetails()"
+          style="padding: 0.5rem 1rem; background: transparent; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

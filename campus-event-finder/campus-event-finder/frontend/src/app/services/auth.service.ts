@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
 import {
-  DEMO_DEPARTMENT_ACCOUNTS,
   isKnownDepartment,
   normalizeDepartment,
   sameDepartment,
@@ -14,11 +13,11 @@ export interface User {
   id: string;
   fullName: string;
   email: string;
-  password: string;
+  password?: string;
   department: string;
   role: UserRole;
   profileImage?: string;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 export interface LoginCredentials {
@@ -39,82 +38,13 @@ export interface RegisterData {
 })
 export class AuthService {
   private readonly apiUrl = 'http://localhost:5000/api/users';
-  private readonly usersStorageKey = 'users';
-  private readonly adminCodesStorageKey = 'adminCodes';
-  private readonly resetTokensStorageKey = 'resetTokens';
   private readonly currentUserStorageKey = 'currentUser';
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  private users: User[] = [];
-  private adminCodes: string[] = [];
-  private resetTokens: Array<{ email: string; token: string; createdAt: string }> = [];
-
   constructor(private http: HttpClient) {
-    this.loadUsers();
     this.loadCurrentUser();
-  }
-
-  private loadUsers(): void {
-    const storedUsers = localStorage.getItem(this.usersStorageKey);
-    if (storedUsers) {
-      try {
-        const parsed = JSON.parse(storedUsers) as unknown;
-        if (Array.isArray(parsed)) {
-          this.users = parsed
-            .filter(user => user && typeof user === 'object')
-            .map(user => this.normalizeUser(user as User));
-        }
-      } catch {
-        this.users = [];
-      }
-    }
-
-    const merged = this.mergeDemoUsers(this.users);
-    this.users = merged.users;
-    if (merged.changed) {
-      this.saveUsers();
-    }
-  }
-
-  private loadAdminCodes(): void {
-    const storedCodes = localStorage.getItem(this.adminCodesStorageKey);
-    if (storedCodes) {
-      try {
-        const parsed = JSON.parse(storedCodes) as unknown;
-        if (Array.isArray(parsed)) {
-          this.adminCodes = parsed.filter(code => typeof code === 'string');
-        }
-      } catch {
-        this.adminCodes = [];
-      }
-    }
-
-    if (!this.adminCodes.length) {
-      this.adminCodes = ['ADMIN123'];
-      this.saveAdminCodes();
-    }
-  }
-
-  private loadResetTokens(): void {
-    const storedTokens = localStorage.getItem(this.resetTokensStorageKey);
-    if (storedTokens) {
-      try {
-        const parsed = JSON.parse(storedTokens) as unknown;
-        if (Array.isArray(parsed)) {
-          this.resetTokens = parsed.filter(
-            token => token && typeof token === 'object'
-          ) as Array<{ email: string; token: string; createdAt: string }>;
-        }
-      } catch {
-        this.resetTokens = [];
-      }
-    }
-  }
-
-  private saveResetTokens(): void {
-    localStorage.setItem(this.resetTokensStorageKey, JSON.stringify(this.resetTokens));
   }
 
   private loadCurrentUser(): void {
@@ -123,21 +53,11 @@ export class AuthService {
 
     try {
       const parsed = this.normalizeUser(JSON.parse(storedCurrentUser) as User);
-      const latest = this.users.find(user => user.email === parsed.email) ?? parsed;
-      this.currentUserSubject.next(latest);
-      localStorage.setItem(this.currentUserStorageKey, JSON.stringify(latest));
+      this.currentUserSubject.next(parsed);
     } catch {
       this.currentUserSubject.next(null);
       localStorage.removeItem(this.currentUserStorageKey);
     }
-  }
-
-  private saveUsers(): void {
-    localStorage.setItem(this.usersStorageKey, JSON.stringify(this.users));
-  }
-
-  private saveAdminCodes(): void {
-    localStorage.setItem(this.adminCodesStorageKey, JSON.stringify(this.adminCodes));
   }
 
   register(data: RegisterData): Observable<{ success: boolean; message: string }> {
@@ -146,106 +66,85 @@ export class AuthService {
       return of({ success: false, message: 'Please choose a valid department' });
     }
 
-    const normalizedEmail = this.normalizeEmail(data.email);
-    const existingUser = this.users.find(u => u.email === normalizedEmail);
-
-    if (existingUser) {
-      return of({ success: false, message: 'Email already registered' });
-    }
-
     if (!this.isLiceoEmail(data.email)) {
       return of({ success: false, message: 'Use your official @liceo.edu.ph email' });
     }
 
     const email = this.normalizeEmail(data.email);
-
     let role: UserRole = 'student';
 
     if (data.adminCode) {
       return this.http.post<{ valid: boolean }>(`${this.apiUrl}/validate-admin-code`, { code: data.adminCode }).pipe(
         map(response => {
           if (!response.valid) {
-            return { success: false, message: 'Invalid admin code' };
+            throw new Error('Invalid admin code');
           }
-          role = 'admin';
-          const newUser: User = {
-            id: this.generateId(),
-            fullName: data.fullName,
+          return 'admin';
+        }),
+        catchError(() => {
+          throw new Error('Invalid admin code or server error');
+        })
+      ).pipe(
+        map(() => {
+          // Send registration next
+          this.http.post<User>(`${this.apiUrl}/register`, {
+            name: data.fullName,
             email,
             password: data.password,
             department,
-            role,
-            createdAt: new Date()
-          };
-          this.users.push(newUser);
-          this.saveUsers();
+            role: 'admin'
+          }).subscribe({
+            next: () => {},
+            error: () => {}
+          });
           return { success: true, message: 'Registration successful' };
         }),
-        catchError(() => of({ success: false, message: 'Failed to validate admin code' }))
+        catchError(err => of({ success: false, message: (err as Error).message }))
       );
     } else {
-      const newUser: User = {
-        id: this.generateId(),
-        fullName: data.fullName,
+      return this.http.post<User>(`${this.apiUrl}/register`, {
+        name: data.fullName,
         email,
         password: data.password,
         department,
-        role,
-        createdAt: new Date()
-      };
-      this.users.push(newUser);
-      this.saveUsers();
-      return of({ success: true, message: 'Registration successful' });
+        role
+      }).pipe(
+        map(() => ({ success: true, message: 'Registration successful' })),
+        catchError((err: any) => {
+          if (err.status === 409) return of({ success: false, message: 'Email already registered' });
+          return of({ success: false, message: 'Registration failed' });
+        })
+      );
     }
   }
 
-  login(credentials: LoginCredentials): { success: boolean; message: string } {
+  login(credentials: LoginCredentials): Observable<{ success: boolean; message: string }> {
     if (!this.isLiceoEmail(credentials.email)) {
-      return { success: false, message: 'Please use your official @liceo.edu.ph email to log in.' };
+      return of({ success: false, message: 'Please use your official @liceo.edu.ph email to log in.' });
     }
 
     const normalizedEmail = this.normalizeEmail(credentials.email);
-    const user = this.users.find(
-      candidate =>
-        candidate.email === normalizedEmail && candidate.password === credentials.password
+    
+    return this.http.post<User>(`${this.apiUrl}/login`, {
+      email: normalizedEmail,
+      password: credentials.password
+    }).pipe(
+      tap(user => {
+        const normalized = this.normalizeUser(user);
+        this.currentUserSubject.next(normalized);
+        localStorage.setItem(this.currentUserStorageKey, JSON.stringify(normalized));
+      }),
+      map(() => ({ success: true, message: 'Login successful' })),
+      catchError(() => of({ success: false, message: 'Invalid email or password' }))
     );
-
-    if (!user) {
-      return { success: false, message: 'Invalid email or password' };
-    }
-
-    this.currentUserSubject.next(user);
-    localStorage.setItem(this.currentUserStorageKey, JSON.stringify(user));
-
-    return { success: true, message: 'Login successful' };
   }
 
   private isLiceoEmail(email: string): boolean {
     return typeof email === 'string' && this.normalizeEmail(email).endsWith('@liceo.edu.ph');
   }
 
-  private normalizeAdminCode(code: string): string {
-    return typeof code === 'string' ? code.trim().toUpperCase() : '';
-  }
-
   private normalizeEmail(email: string): string {
     return typeof email === 'string' ? email.trim().toLowerCase() : '';
-  }
-
-  private isValidAdminCode(code: string): boolean {
-    return this.adminCodes.includes(this.normalizeAdminCode(code));
-  }
-
-  private consumeAdminCode(code: string): boolean {
-    const normalizedCode = this.normalizeAdminCode(code);
-    const index = this.adminCodes.indexOf(normalizedCode);
-    if (index === -1) {
-      return false;
-    }
-
-    this.adminCodes.splice(index, 1);
-    this.saveAdminCodes();
-    return true;
   }
 
   generateAdminCode(): Observable<{ code: string }> {
@@ -273,22 +172,6 @@ export class AuthService {
     );
   }
 
-  private generateResetToken(email: string): string {
-    const token = `RESET-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-    this.resetTokens.push({
-      email,
-      token,
-      createdAt: new Date().toISOString()
-    });
-    this.saveResetTokens();
-    return token;
-  }
-
-  isEmailRegistered(email: string): boolean {
-    const normalizedEmail = this.normalizeEmail(email);
-    return this.users.some(user => user.email === normalizedEmail);
-  }
-
   logout(): void {
     this.currentUserSubject.next(null);
     localStorage.removeItem(this.currentUserStorageKey);
@@ -302,25 +185,28 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  getAllUsers(): User[] {
-    return this.users.slice();
+  getAllUsers(): Observable<User[]> {
+    return this.http.get<User[]>(this.apiUrl);
   }
 
-  findUserById(userId: string): User | undefined {
-    return this.users.find(user => user.id === userId);
-  }
-
-  getDepartmentStudents(department: string): User[] {
-    return this.users.filter(
-      user => user.role === 'student' && sameDepartment(user.department, department)
+  getDepartmentStudents(department: string): Observable<User[]> {
+    return this.getAllUsers().pipe(
+      map(users => users.filter(user => 
+        sameDepartment(user.department, department) && (user.role === 'student' || user.role === 'admin')
+      ))
     );
   }
 
-  getDepartmentAdmins(department: string): User[] {
-    return this.users.filter(
-      user =>
-        user.role === 'main-admin' || (user.role === 'admin' && sameDepartment(user.department, department))
+  getDepartmentAdmins(department: string): Observable<User[]> {
+    return this.getAllUsers().pipe(
+      map(users => users.filter(user => 
+        sameDepartment(user.department, department) && user.role === 'admin'
+      ))
     );
+  }
+
+  findUserById(userId: string): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/${userId}`);
   }
 
   isAdmin(): boolean {
@@ -343,31 +229,17 @@ export class AuthService {
     return currentUser.role === 'admin' && sameDepartment(currentUser.department, otherDepartment);
   }
 
-  updateProfile(data: Partial<User>): void {
+  updateProfile(data: Partial<User>): Observable<User> {
     const currentUser = this.currentUserSubject.value;
+    if (!currentUser) throw new Error('No current user to update');
 
-    if (!currentUser) return;
-
-    const updatedUser: User = {
-      ...currentUser,
-      ...data,
-      department: currentUser.department
-    };
-
-    this.currentUserSubject.next(updatedUser);
-
-    const index = this.users.findIndex(u => u.id === currentUser.id);
-
-    if (index !== -1) {
-      this.users[index] = updatedUser;
-    }
-
-    this.saveUsers();
-    localStorage.setItem(this.currentUserStorageKey, JSON.stringify(updatedUser));
-  }
-
-  private generateId(): string {
-    return 'user_' + Math.random().toString(36).substring(2, 9);
+    return this.http.put<User>(`${this.apiUrl}/${currentUser.id}`, data).pipe(
+      tap(updatedUser => {
+        const fullUser = { ...currentUser, ...updatedUser };
+        this.currentUserSubject.next(fullUser);
+        localStorage.setItem(this.currentUserStorageKey, JSON.stringify(fullUser));
+      })
+    );
   }
 
   private normalizeUser(user: User): User {
@@ -376,28 +248,5 @@ export class AuthService {
       email: this.normalizeEmail(user.email),
       department: normalizeDepartment(user.department) || user.department || 'Unknown'
     };
-  }
-
-  private mergeDemoUsers(existingUsers: User[]): { users: User[]; changed: boolean } {
-    const users = existingUsers.slice();
-    let changed = false;
-
-    for (const demo of DEMO_DEPARTMENT_ACCOUNTS) {
-      const existing = users.find(user => user.email === demo.email);
-      if (existing) continue;
-
-      users.push({
-        id: this.generateId(),
-        fullName: demo.fullName,
-        email: demo.email,
-        password: demo.password,
-        department: demo.department,
-        role: demo.role,
-        createdAt: new Date()
-      });
-      changed = true;
-    }
-
-    return { users, changed };
   }
 }

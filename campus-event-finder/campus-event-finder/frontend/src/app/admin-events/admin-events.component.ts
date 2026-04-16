@@ -659,12 +659,15 @@ export class AdminEventsComponent implements OnInit {
       .setAttendance(registrationsEvent.id, registration.id, nextAttendance)
       .subscribe({
         next: () => {
-          const student = this.authService.findUserById(registration.userId);
-          this.notifications.notifyUser(student, {
-            title: 'Attendance updated',
-            message: `Your attendance for ${registrationsEvent.title} was marked ${nextAttendance ? 'present' : 'absent'}.`,
-            category: 'attendance',
-            route: '/notifications'
+          this.authService.findUserById(registration.userId).subscribe(student => {
+            if (student) {
+              this.notifications.notifyUser(student, {
+                title: 'Attendance updated',
+                message: `Your attendance for ${registrationsEvent.title} was marked ${nextAttendance ? 'present' : 'absent'}.`,
+                category: 'attendance',
+                route: '/notifications'
+              });
+            }
           });
           this.engagement.fetchRegistrations(registrationsEvent.id).subscribe({
             next: registrations => {
@@ -975,15 +978,14 @@ export class AdminEventsComponent implements OnInit {
     message: string,
     route: string
   ): void {
-    const recipients = this.authService
-      .getDepartmentStudents(department)
-      .filter(user => user.id !== this.currentUser?.id);
-
-    this.notifications.notifyUsers(recipients, {
-      title,
-      message,
-      category: 'event',
-      route
+    this.authService.getDepartmentStudents(department).subscribe(users => {
+      const recipients = users.filter(user => user.id !== this.currentUser?.id);
+      this.notifications.notifyUsers(recipients, {
+        title,
+        message,
+        category: 'event',
+        route
+      });
     });
   }
 

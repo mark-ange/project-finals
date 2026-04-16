@@ -10,11 +10,39 @@ interface UserRow extends RowDataPacket {
 
 const router = Router();
 
+export const DEMO_DEPARTMENT_ACCOUNTS = [
+  { fullName: 'CS Admin', email: 'cs.admin@liceo.edu.ph', password: 'CSAdmin123', department: 'Computer Science Department', role: 'admin' },
+  { fullName: 'CS Student', email: 'cs.student@liceo.edu.ph', password: 'CSStudent123', department: 'Computer Science Department', role: 'student' },
+  { fullName: 'Engineering Admin', email: 'eng.admin@liceo.edu.ph', password: 'EngAdmin123', department: 'Engineering Department', role: 'admin' },
+  { fullName: 'Engineering Student', email: 'eng.student@liceo.edu.ph', password: 'EngStudent123', department: 'Engineering Department', role: 'student' },
+  { fullName: 'Healthcare Admin', email: 'health.admin@liceo.edu.ph', password: 'HealthAdmin123', department: 'Healthcare Department', role: 'admin' },
+  { fullName: 'Healthcare Student', email: 'health.student@liceo.edu.ph', password: 'HealthStudent123', department: 'Healthcare Department', role: 'student' },
+  { fullName: 'IT Admin', email: 'it.admin@liceo.edu.ph', password: 'ITAdmin123', department: 'Information Technology Department', role: 'admin' },
+  { fullName: 'IT Student', email: 'it.student@liceo.edu.ph', password: 'ITStudent123', department: 'Information Technology Department', role: 'student' },
+  { fullName: 'Business Admin', email: 'business.admin@liceo.edu.ph', password: 'BusinessAdmin123', department: 'Business Department', role: 'admin' },
+  { fullName: 'Business Student', email: 'business.student@liceo.edu.ph', password: 'BusinessStudent123', department: 'Business Department', role: 'student' },
+  { fullName: 'Sports Admin', email: 'sports.admin@liceo.edu.ph', password: 'SportsAdmin123', department: 'Sports Department', role: 'admin' },
+  { fullName: 'Sports Student', email: 'sports.student@liceo.edu.ph', password: 'SportsStudent123', department: 'Sports Department', role: 'student' },
+  { fullName: 'Fine Arts Admin', email: 'arts.admin@liceo.edu.ph', password: 'ArtsAdmin123', department: 'Fine Arts Department', role: 'admin' },
+  { fullName: 'Fine Arts Student', email: 'arts.student@liceo.edu.ph', password: 'ArtsStudent123', department: 'Fine Arts Department', role: 'student' },
+  { fullName: 'Student Affairs Admin', email: 'affairs.admin@liceo.edu.ph', password: 'AffairsAdmin123', department: 'Student Affairs Department', role: 'admin' },
+  { fullName: 'Student Affairs Student', email: 'affairs.student@liceo.edu.ph', password: 'AffairsStudent123', department: 'Student Affairs Department', role: 'student' },
+  { fullName: 'Main Admin', email: 'main.admin@liceo.edu.ph', password: 'MainAdmin123', department: 'Main Administration', role: 'main-admin' }
+];
+
+async function seedUsersIfEmpty(): Promise<void> {
+  const insertSql = 'INSERT IGNORE INTO users (name, email, password, department, role) VALUES (?, ?, ?, ?, ?)';
+  for (const user of DEMO_DEPARTMENT_ACCOUNTS) {
+    await db.query(insertSql, [user.fullName, user.email, user.password, user.department, user.role]);
+  }
+}
+
 // GET /api/users
 router.get('/', async (_req: Request, res: Response) => {
   try {
-    const [rows] = await db.query<UserRow[]>(
-      'SELECT id, name, email FROM users ORDER BY id DESC'
+    await seedUsersIfEmpty();
+    const [rows] = await db.query<RowDataPacket[]>(
+      'SELECT id, name AS fullName, email, department, role FROM users ORDER BY id DESC'
     );
     return res.json(rows);
   } catch (error) {
@@ -31,8 +59,8 @@ router.get('/:id', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid user id.' });
     }
 
-    const [rows] = await db.query<UserRow[]>(
-      'SELECT id, name, email FROM users WHERE id = ?',
+    const [rows] = await db.query<RowDataPacket[]>(
+      'SELECT id, name AS fullName, email, department, role FROM users WHERE id = ?',
       [userId]
     );
 
@@ -47,28 +75,63 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/users
-router.post('/', async (req: Request, res: Response) => {
+// POST /api/users/register
+router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { name, email } = req.body as { name?: string; email?: string };
+    const { name, email, password, department, role } = req.body;
 
-    if (!name || !email) {
-      return res.status(400).json({ message: 'Name and email are required.' });
+    if (!name || !email || !password || !department) {
+      return res.status(400).json({ message: 'Name, email, password, and department are required.' });
+    }
+
+    const assignedRole = role || 'student';
+
+    const [existing] = await db.query<RowDataPacket[]>('SELECT id FROM users WHERE email = ?', [email]);
+    if (existing.length > 0) {
+      return res.status(409).json({ message: 'Email is already registered.' });
     }
 
     const [result] = await db.query<ResultSetHeader>(
-      'INSERT INTO users (name, email) VALUES (?, ?)',
-      [name, email]
+      'INSERT INTO users (name, email, password, department, role) VALUES (?, ?, ?, ?, ?)',
+      [name, email, password, department, assignedRole]
     );
 
     return res.status(201).json({
       id: result.insertId,
       name,
-      email
+      email,
+      department,
+      role: assignedRole
     });
   } catch (error) {
-    console.error('Error creating user:', error);
+    console.error('Error registering user:', error);
     return res.status(500).json({ message: 'Failed to create user.' });
+  }
+});
+
+// POST /api/users/login
+router.post('/login', async (req: Request, res: Response) => {
+  try {
+    await seedUsersIfEmpty();
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required.' });
+    }
+
+    const [rows] = await db.query<RowDataPacket[]>(
+      'SELECT id, name AS fullName, email, password, department, role, created_at AS createdAt FROM users WHERE email = ? AND password = ? LIMIT 1',
+      [email, password]
+    );
+
+    if (!rows.length) {
+      return res.status(401).json({ message: 'Invalid email or password.' });
+    }
+
+    return res.json(rows[0]);
+  } catch (error) {
+    console.error('Error logging in:', error);
+    return res.status(500).json({ message: 'Failed to log in.' });
   }
 });
 

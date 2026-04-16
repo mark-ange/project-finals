@@ -8,7 +8,7 @@ import { DEPARTMENT_OPTIONS } from '../services/department-directory';
 @Component({
   selector: 'app-sign-up',
   standalone: true,
-  imports: [NgIf, NgFor, ReactiveFormsModule],
+  imports: [NgIf, ReactiveFormsModule],
   templateUrl: './sign-up.component.html',
   styleUrls: ['./sign-up.component.css']
 })

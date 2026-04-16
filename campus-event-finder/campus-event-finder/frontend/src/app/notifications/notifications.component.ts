@@ -65,4 +65,17 @@ export class NotificationsComponent {
     if (category === 'system') return 'System';
     return 'Event';
   }
+
+  selectedNotification: AppNotification | null = null;
+
+  viewNotification(notification: AppNotification): void {
+    if (!notification.read) {
+      this.markAsRead(notification.id);
+    }
+    this.selectedNotification = notification;
+  }
+
+  closeNotificationDetails(): void {
+    this.selectedNotification = null;
+  }
 }

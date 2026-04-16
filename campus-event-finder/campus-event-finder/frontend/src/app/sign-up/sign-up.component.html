@@ -78,7 +78,9 @@
           <label class="field-label" for="reg-department">Department</label>
           <select id="reg-department" class="field-input" formControlName="department">
             <option value="" disabled>Select your department</option>
-            <option *ngFor="let department of departments" [value]="department">{{ department }}</option>
+            @for (department of departments; track department) {
+              <option [value]="department">{{ department }}</option>
+            }
           </select>
         </div>
 
