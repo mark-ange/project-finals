@@ -6,53 +6,6 @@
   font-family: 'Arial Narrow', Arial, sans-serif;
 }
 
-.settings-header {
-  height: 52px;
-  background: #600000;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px 0 10px;
-  box-sizing: border-box;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.brand-logo {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-  border: 1px solid #12436f;
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  color: #ffd400;
-  font-size: 22px;
-  line-height: 0.9;
-  font-family: 'Franklin Gothic Heavy', 'Arial Black', sans-serif;
-}
-
-.header-icons {
-  display: flex;
-  align-items: center;
-}
-
-.header-icons button {
-  border: 0;
-  background: transparent;
-  color: #111;
-  font-size: 30px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-}
-
 .settings-card {
   width: min(520px, 92vw);
   margin: 34px auto 0;
@@ -161,9 +114,162 @@
   background: rgba(255, 212, 0, 0.12);
 }
 
+.theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.theme-toggle {
+  border-radius: 999px;
+  height: 38px;
+  padding: 0 16px;
+  border: 2px solid rgba(255, 212, 0, 0.7);
+  background: transparent;
+  color: #ffd400;
+  font-family: Arial, sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s, border-color 0.2s;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 212, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+:host-context(.dark-mode) .settings-page {
+  color: #f2f2f2;
+}
+
+:host-context(.dark-mode) .settings-header {
+  background: #2a0000;
+}
+
+:host-context(.dark-mode) .settings-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+:host-context(.dark-mode) .label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+:host-context(.dark-mode) .input {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+:host-context(.dark-mode) .theme-toggle {
+  border-color: rgba(255, 212, 0, 0.9);
+}
+
+:host-context(.dark-mode) .theme-toggle:hover {
+  background: rgba(255, 212, 0, 0.16);
+}
+
 @media (max-width: 680px) {
-  .settings-card h1 {
-    font-size: 40px;
+  .settings-card {
+    margin: 20px 12px 0;
+    padding: 28px 16px 32px;
+    border-radius: 20px;
   }
+
+  .settings-card h1 {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-card h1 {
+    font-size: 30px;
+  }
+  
+  .settings-form {
+    gap: 10px;
+  }
+  
+  .input {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  
+  .save-btn {
+    height: 38px;
+  }
+  
+  .logout-btn {
+    height: 36px;
+  }
+}
+
+/* ─── Dark Mode ─────────────────────────────────────── */
+:host-context(.dark-mode) .settings-page {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.4), rgba(18, 18, 18, 0.98)),
+    var(--notifications-bg, none);
+}
+
+:host-context(.dark-mode) .settings-card {
+  background: rgba(30, 30, 30, 0.95);
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .settings-card h1 {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .label {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .input {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .input:focus {
+  outline-color: #ffd400;
+}
+
+:host-context(.dark-mode) .save-btn {
+  background: #ffd400;
+  color: #1a0000;
+}
+
+:host-context(.dark-mode) .save-btn:hover:not(:disabled) {
+  background: #ffea6d;
+}
+
+:host-context(.dark-mode) .logout-btn {
+  border-color: #ffd400;
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .logout-btn:hover {
+  background: rgba(255, 212, 0, 0.1);
+}
+
+:host-context(.dark-mode) .theme-toggle {
+  background: #ffd400;
+  color: #1a0000;
+}
+
+:host-context(.dark-mode) .theme-toggle:hover {
+  background: #ffea6d;
+}
+
+:host-context(.dark-mode) .status.error {
+  background: rgba(255, 80, 80, 0.15);
+  color: #ff9999;
+}
+
+:host-context(.dark-mode) .status.success {
+  background: rgba(80, 200, 120, 0.15);
+  color: #90EE90;
 }
 

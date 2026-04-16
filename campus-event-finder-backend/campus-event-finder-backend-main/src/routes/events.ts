@@ -199,12 +199,10 @@ async function seedEventsIfEmpty(): Promise<void> {
         event.status
       ]);
       await db.query('INSERT INTO event_metrics (event_id, likes, shares) VALUES (?, 0, 0)', [event.id]);
+      // Seed demo engagement only for initial default events.
+      // This prevents newly created events from being populated with random likes/comments on every GET.
+      await seedMockEngagementForEvent(event.id, event.department);
     }
-  }
-
-  const [existingEvents] = await db.query<RowDataPacket[]>('SELECT id, department FROM events');
-  for (const event of existingEvents) {
-    await seedMockEngagementForEvent(event.id, event.department);
   }
 }
 
@@ -580,6 +578,24 @@ router.post('/:id/registrations', async (req: Request, res: Response) => {
 
 router.patch('/:id/registrations/:registrationId', async (req: Request, res: Response) => {
   try {
+    // Attendance can only be updated once the event is marked inactive/done.
+    const eventId = req.params.id;
+    const [eventRows] = await db.query<RowDataPacket[]>(
+      'SELECT status FROM events WHERE id = ?',
+      [eventId]
+    );
+
+    if (!eventRows.length) {
+      return res.status(404).json({ message: 'Event not found.' });
+    }
+
+    const eventStatus = eventRows[0]?.status as 'active' | 'inactive' | 'draft' | undefined;
+    if (eventStatus !== 'inactive') {
+      return res.status(400).json({
+        message: 'Attendance is locked until the event is marked inactive/done.'
+      });
+    }
+
     const attended = req.body.attended ? 1 : 0;
     const [result] = await db.query<ResultSetHeader>(
       'UPDATE event_registrations SET attended = ? WHERE id = ? AND event_id = ?',

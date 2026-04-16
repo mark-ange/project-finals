@@ -2,6 +2,7 @@ import { AsyncPipe, DatePipe, NgFor, NgIf } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { NavigationComponent } from '../shared/navigation/navigation.component';
 import { AppNotification, NotificationService } from '../services/notification.service';
 
 @Component({
@@ -9,7 +10,7 @@ import { AppNotification, NotificationService } from '../services/notification.s
   standalone: true,
   templateUrl: './notifications.component.html',
   styleUrls: ['./notifications.component.css'],
-  imports: [NgFor, NgIf, AsyncPipe, DatePipe]
+  imports: [NgFor, NgIf, AsyncPipe, DatePipe, NavigationComponent]
 })
 export class NotificationsComponent {
   private readonly router = inject(Router);

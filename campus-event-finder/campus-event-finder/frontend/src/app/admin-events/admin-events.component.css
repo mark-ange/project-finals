@@ -8,122 +8,6 @@
   color: #1a1a2e;
 }
 
-/* ─── Top Header ────────────────────────────────────────── */
-.admin-top {
-  height: 60px;
-  background: linear-gradient(135deg, #6e0000 0%, #4a0000 100%);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.brand-logo {
-  width: 38px;
-  height: 38px;
-  object-fit: contain;
-  border-radius: 8px;
-  border: 2px solid rgba(255, 212, 0, 0.4);
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  font-family: 'Outfit', sans-serif;
-  color: #ffd400;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  line-height: 1.2;
-}
-
-.top-icons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.top-icons .menu-button {
-  border: none;
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, transform 0.2s;
-  position: fixed;
-  top: 12px;
-  right: 18px;
-  z-index: 220;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.18);
-  backdrop-filter: blur(6px);
-}
-
-.top-icons .menu-button:hover {
-  background: rgba(255,255,255,0.22);
-  transform: scale(1.05);
-}
-
-/* ─── Dropdown Menu ─────────────────────────────────────── */
-.admin-menu {
-  background: #3d0000;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-  padding: 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.12);
-  position: fixed;
-  top: 68px;
-  right: 18px;
-  width: 190px;
-  z-index: 210;
-  box-shadow: 0 18px 40px rgba(0,0,0,0.24);
-  animation: slideDown 0.18s ease;
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.admin-menu button {
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 8px;
-  padding: 7px 16px;
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  font-family: 'Inter', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
-  text-align: left;
-}
-
-.admin-menu button:hover {
-  background: rgba(255,255,255,0.18);
-  border-color: rgba(255,212,0,0.4);
-  color: #ffd400;
-}
-
 /* ─── Title Area ────────────────────────────────────────── */
 .admin-title-area {
   background: linear-gradient(135deg, #8e0000 0%, #600000 100%);
@@ -137,6 +21,32 @@
 
 .title-left {
   text-align: left;
+  flex: 1;
+}
+
+.title-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.create-event-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 20px;
+  background: #ffd400;
+  color: #3a1800;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.create-event-btn:hover {
+  background: #ffea6d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 200, 0, 0.3);
 }
 
 .admin-title-area h1 {
@@ -1261,7 +1171,7 @@ main {
 /* ─── Responsive ────────────────────────────────────────── */
 @media (max-width: 1100px) {
   .analytics-cards {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
   .analytics-grid {
     grid-template-columns: 1fr;
@@ -1277,38 +1187,489 @@ main {
   .feedback-panel {
     grid-column: auto;
   }
+  
+  main {
+    padding: 16px 16px 32px;
+  }
+  
+  .admin-title-area {
+    padding: 16px;
+  }
+  
+  .admin-title-area h1 {
+    font-size: 24px;
+  }
 }
 
 @media (max-width: 680px) {
-  .top-icons .menu-button {
-    top: 10px;
-    right: 12px;
-  }
-
-  .admin-menu {
-    right: 12px;
-    left: 12px;
-    width: auto;
-  }
-
   .two-col {
     grid-template-columns: 1fr;
   }
+  
   .admin-title-area {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+    padding: 16px;
   }
+  
+  .admin-title-area h1 {
+    font-size: 22px;
+  }
+  
+  .title-actions {
+    width: 100%;
+  }
+  
+  .create-event-btn {
+    width: 100%;
+  }
+  
+  .admin-code-copy {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .generate-code-button {
+    width: 100%;
+  }
+  
   .event-head {
     grid-template-columns: 1fr;
   }
+  
+  .event-image {
+    height: 140px;
+  }
+  
   .event-meta {
     border-left: none;
     border-top: 1px solid #efefef;
     flex-direction: row;
     flex-wrap: wrap;
+    gap: 8px;
   }
+  
+  .event-body {
+    padding: 12px;
+  }
+  
+  .title-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .likes {
+    align-self: flex-start;
+  }
+  
+  .footer-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .comments {
+    justify-content: center;
+  }
+  
+  .admin-actions {
+    justify-content: center;
+  }
+  
   main {
-    padding: 16px 12px 32px;
+    padding: 12px 12px 32px;
   }
+  
+  .analytics-section {
+    padding: 16px;
+  }
+  
+  .analytics-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .analytics-card strong {
+    font-size: 24px;
+  }
+  
+  .line-chart-wrapper {
+    min-height: 180px;
+  }
+  
+  .line-chart-svg {
+    height: 180px;
+  }
+  
+  .modal {
+    padding: 20px;
+    margin: 8px;
+  }
+  
+  .modal-title {
+    font-size: 20px;
+  }
+  
+  .editor-actions {
+    flex-direction: column;
+  }
+  
+  .primary,
+  .secondary {
+    width: 100%;
+  }
+  
+  .registration-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .attendance-toggle {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-title-area h1 {
+    font-size: 20px;
+  }
+  
+  .admin-title-area h2 {
+    font-size: 12px;
+  }
+  
+  .event-meta {
+    font-size: 10px;
+  }
+  
+  .admin-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .admin-actions button,
+  .admin-actions .status,
+  .admin-actions .confirm-delete {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .action-text {
+    display: inline-block;
+  }
+  
+  .pager button {
+    padding: 6px 14px;
+  }
+}
+
+/* ─── Dark Mode ─────────────────────────────────────── */
+:host-context(.dark-mode) .admin-page {
+  background: #121212;
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .admin-title-area {
+  background: linear-gradient(135deg, #4a0000 0%, #2a0000 100%);
+}
+
+:host-context(.dark-mode) .admin-title-area h1,
+:host-context(.dark-mode) .admin-title-area h2 {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .admin-code-panel {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:host-context(.dark-mode) .code-label {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .code-description {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .generated-code {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .analytics-section {
+  background: linear-gradient(135deg, #1e1e1e 0%, #252530 100%);
+  border-color: rgba(255, 212, 0, 0.1);
+}
+
+:host-context(.dark-mode) .analytics-heading h3 {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .analytics-kicker {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .analytics-copy {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .analytics-card {
+  background: #1e1e1e;
+  border-color: #333;
+}
+
+:host-context(.dark-mode) .analytics-label {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .analytics-card strong {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .analytics-card p {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .chart-panel {
+  background: #1e1e1e;
+  border-color: #333;
+}
+
+:host-context(.dark-mode) .chart-head h4 {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .chart-note {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .chart-title {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .chart-subtitle {
+  color: #aaaaaa;
+}
+
+:host-context(.dark-mode) .metric-track {
+  background: #333;
+}
+
+:host-context(.dark-mode) .metric-number {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .events-heading {
+  color: #ffffff;
+  border-color: rgba(255, 212, 0, 0.2);
+}
+
+:host-context(.dark-mode) .event-card {
+  background: #1e1e1e;
+  border-color: #333;
+}
+
+:host-context(.dark-mode) .event-meta {
+  background: #1a1a1a;
+  border-color: #333;
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .event-meta p::before {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .event-meta p {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .event-body h4 {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .description {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .footer-row {
+  border-color: #333;
+}
+
+:host-context(.dark-mode) .comments {
+  background: #2a2a2a;
+  border-color: #444;
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .comments:hover {
+  background: #333;
+  border-color: #ffd400;
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .metric-value {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .status {
+  background: rgba(255, 212, 0, 0.2);
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .status.draft {
+  background: rgba(245, 158, 11, 0.2);
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .status.inactive {
+  background: rgba(156, 163, 175, 0.2);
+  color: #aaaaaa;
+}
+
+:host-context(.dark-mode) .toggle-status {
+  background: #333;
+  color: #ffffff;
+  border-color: #444;
+}
+
+:host-context(.dark-mode) .danger {
+  color: #ff9999;
+}
+
+:host-context(.dark-mode) .edit {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .pager button {
+  background: #1e1e1e;
+  border-color: #333;
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .pager button:hover:not(:disabled) {
+  background: #ffd400;
+  color: #1a0000;
+  border-color: #ffd400;
+}
+
+:host-context(.dark-mode) .pager span {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .empty-state {
+  background: #1e1e1e;
+  border-color: #333;
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .modal {
+  background: #1e1e1e;
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .modal-title {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .modal-subtitle {
+  color: #aaaaaa;
+}
+
+:host-context(.dark-mode) .field-label {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .hint {
+  color: #aaaaaa;
+}
+
+:host-context(.dark-mode) .field-input,
+:host-context(.dark-mode) .field-select,
+:host-context(.dark-mode) .field-textarea {
+  background: #2a2a2a;
+  border-color: #444;
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .field-input:focus,
+:host-context(.dark-mode) .field-select:focus,
+:host-context(.dark-mode) .field-textarea:focus {
+  border-color: #ffd400;
+}
+
+:host-context(.dark-mode) .comment {
+  background: #2a2a2a;
+  border-color: #333;
+}
+
+:host-context(.dark-mode) .comment-author {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .comment-text {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .comment-time {
+  color: #aaaaaa;
+}
+
+:host-context(.dark-mode) .comment-delete {
+  color: #ff9999;
+}
+
+:host-context(.dark-mode) .comment-input {
+  background: #2a2a2a;
+  border-color: #444;
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .comment-input:focus {
+  border-color: #ffd400;
+}
+
+:host-context(.dark-mode) .registration-row {
+  background: #2a2a2a;
+  border-color: #333;
+}
+
+:host-context(.dark-mode) .registration-info strong {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .registration-info span {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .create-event-btn {
+  background: #ffd400;
+  color: #1a0000;
+}
+
+:host-context(.dark-mode) .create-event-btn:hover {
+  background: #ffea6d;
+}
+
+:host-context(.dark-mode) .generate-code-button {
+  background: #ffd400;
+  color: #1a0000;
+}
+
+:host-context(.dark-mode) .copy-code-button {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .confirm-delete span {
+  color: #aaaaaa;
+}
+
+:host-context(.dark-mode) .field-error,
+:host-context(.dark-mode) .form-error {
+  color: #ff9999;
+}
+
+:host-context(.dark-mode) .registration-summary {
+  color: #ffd400;
 }

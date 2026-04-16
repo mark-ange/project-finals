@@ -1,0 +1,38 @@
+<header class="navigation-header">
+  <div class="brand">
+    <img [src]="logoImage" alt="Liceo logo" class="brand-logo" />
+    <div class="brand-text">
+      <span>LICEO</span>
+      <span>EVENT HUB</span>
+    </div>
+  </div>
+
+  <div class="menu-container">
+    <button type="button" class="menu-button" (click)="toggleMenu()" aria-label="Menu">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </button>
+
+    <nav class="menu-strip" *ngIf="menuOpen" aria-label="Navigation menu">
+      <button type="button" (click)="navigateTo('/dashboard')">Home</button>
+      <button
+        type="button"
+        *ngIf="currentUser?.role === 'student' && !isProfilePage()"
+        (click)="navigateTo('/profile')"
+      >
+        Profile
+      </button>
+      <button
+        type="button"
+        *ngIf="currentUser?.role === 'admin' || currentUser?.role === 'main-admin'"
+        (click)="navigateTo('/admin-events')"
+      >
+        Admin Events
+      </button>
+      <button type="button" (click)="navigateTo('/notifications')">Notifications</button>
+      <button type="button" (click)="navigateTo('/settings')">Settings</button>
+      <button type="button" (click)="logout()">Logout</button>
+    </nav>
+  </div>
+</header>

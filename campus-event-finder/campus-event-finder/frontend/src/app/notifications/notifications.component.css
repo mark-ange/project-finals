@@ -9,60 +9,6 @@
   font-family: 'Inter', Arial, sans-serif;
 }
 
-.topbar {
-  height: 60px;
-  background: linear-gradient(135deg, #650000, #430000);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  box-sizing: border-box;
-  box-shadow: 0 8px 24px rgba(28, 10, 10, 0.18);
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.brand-logo {
-  width: 38px;
-  height: 38px;
-  object-fit: contain;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 212, 0, 0.45);
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  color: #ffd400;
-  font-size: 14px;
-  line-height: 1.05;
-  font-family: 'Outfit', 'Arial Black', sans-serif;
-  font-weight: 800;
-  letter-spacing: 1.6px;
-}
-
-.icons {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.icons button {
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-}
-
 .card {
   width: min(920px, 94vw);
   margin: 28px auto;
@@ -247,7 +193,9 @@
 
 @media (max-width: 720px) {
   .card {
-    padding: 20px;
+    padding: 16px;
+    margin: 16px auto;
+    border-radius: 20px;
   }
 
   .card-head,
@@ -256,8 +204,17 @@
     align-items: flex-start;
   }
 
+  .card h1 {
+    font-size: 26px;
+  }
+
   .summary-chip {
     min-width: 0;
+    padding: 10px 14px;
+  }
+
+  .summary-chip strong {
+    font-size: 22px;
   }
 
   .toolbar,
@@ -270,4 +227,135 @@
   .notification-btn {
     width: 100%;
   }
+
+  .notification-item {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .notification-item h2 {
+    font-size: 16px;
+  }
+
+  .notification-item p {
+    font-size: 13px;
+  }
+
+  .empty-state {
+    padding: 32px 16px;
+  }
+
+  .empty-state h2 {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    margin: 12px 8px;
+    padding: 14px;
+  }
+
+  .card h1 {
+    font-size: 22px;
+  }
+
+  .eyebrow {
+    font-size: 10px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+  }
+}
+
+/* ─── Dark Mode ─────────────────────────────────────── */
+:host-context(.dark-mode) .page {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.4), rgba(18, 18, 18, 0.98)),
+    var(--notifications-bg, none);
+}
+
+:host-context(.dark-mode) .card {
+  background: rgba(30, 30, 30, 0.95);
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .card h1 {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .eyebrow {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .subtitle {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .summary-chip {
+  background: linear-gradient(135deg, #4a0000, #8e0000);
+}
+
+:host-context(.dark-mode) .summary-chip strong {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .summary-chip span {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .toolbar-btn {
+  background: #ffd400;
+  color: #1a0000;
+}
+
+:host-context(.dark-mode) .toolbar-btn.ghost {
+  background: #333;
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .notification-item {
+  background: #1e1e1e;
+  border-color: #333;
+}
+
+:host-context(.dark-mode) .notification-item.unread {
+  background: #1a1a1a;
+  border-color: rgba(255, 212, 0, 0.3);
+}
+
+:host-context(.dark-mode) .notification-item h2 {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .notification-item p {
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .timestamp {
+  color: #aaaaaa;
+}
+
+:host-context(.dark-mode) .notification-btn {
+  background: #ffd400;
+  color: #1a0000;
+}
+
+:host-context(.dark-mode) .notification-btn.ghost {
+  background: #333;
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .empty-state {
+  background: rgba(30, 30, 30, 0.9);
+  border-color: rgba(255, 212, 0, 0.2);
+}
+
+:host-context(.dark-mode) .empty-state h2 {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .empty-state p {
+  color: #ffffff;
 }

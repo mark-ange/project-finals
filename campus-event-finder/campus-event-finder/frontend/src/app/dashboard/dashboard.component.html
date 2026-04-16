@@ -1,40 +1,5 @@
 <div class="hub-page">
-  <header class="hub-header">
-    <div class="brand">
-      <img [src]="logoImage" alt="Liceo logo" class="brand-logo" />
-      <div class="brand-text">
-        <span>LICEO</span>
-        <span>EVENT HUB</span>
-      </div>
-    </div>
-
-    <button type="button" class="menu-button" (click)="toggleMenu()" aria-label="Menu">
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-    </button>
-  </header>
-
- 
-  <nav class="menu-strip" *ngIf="menuOpen" aria-label="Dashboard menu">
-    <button type="button" (click)="navigateTo('/dashboard')">Home</button>
-    <button
-      type="button"
-      *ngIf="currentUser?.role === 'admin' || currentUser?.role === 'main-admin'"
-      (click)="navigateTo('/admin-events')"
-    >
-      Admin Events
-    </button>
-    <button
-      type="button"
-      *ngIf="currentUser?.role === 'student'"
-      (click)="navigateTo('/profile')"
-    >
-      Profile
-    </button>
-    <button type="button" (click)="navigateTo('/notifications')">Notifications</button>
-    <button type="button" (click)="logout()">Logout</button>
-  </nav>
+  <app-navigation></app-navigation>
 
   <section class="hero" aria-label="Campus hero">
     <img [src]="heroImage" alt="Campus building" />
@@ -43,20 +8,12 @@
   <main class="hub-main">
     <h1 class="section-title">Feature events</h1>
 
-    <section class="featured-grid" aria-label="Featured events" *ngIf="featuredEvents.length > 0; else noFeaturedEvents">
-      <article
-        class="featured-card"
-        *ngFor="let event of featuredEvents; trackBy: trackByEventId"
-        (click)="openDetails(event)"
-        tabindex="0"
-        (keydown.enter)="openDetails(event)"
-      >
-        <img
-          class="featured-image"
-          [src]="event.image || fallbackEventImage"
-          [alt]="event.title"
-          (error)="onImageError($event)"
-        />
+    <section class="featured-grid" aria-label="Featured events"
+      *ngIf="featuredEvents.length > 0; else noFeaturedEvents">
+      <article class="featured-card" *ngFor="let event of featuredEvents; trackBy: trackByEventId"
+        (click)="openDetails(event)" tabindex="0" (keydown.enter)="openDetails(event)">
+        <img class="featured-image" [src]="event.image || fallbackEventImage" [alt]="event.title"
+          (error)="onImageError($event)" />
         <div class="featured-content">
           <h2>{{ event.title }}</h2>
           <p>{{ event.date }}</p>
@@ -76,20 +33,11 @@
     <h1 class="section-title">Events</h1>
 
     <section class="events-grid" aria-label="All events" *ngIf="events.length > 0; else noDepartmentEvents">
-      <article
-        class="event-card"
-        *ngFor="let event of events; trackBy: trackByEventId"
-        (click)="openDetails(event)"
-        tabindex="0"
-        (keydown.enter)="openDetails(event)"
-      >
+      <article class="event-card" *ngFor="let event of events; trackBy: trackByEventId" (click)="openDetails(event)"
+        tabindex="0" (keydown.enter)="openDetails(event)">
         <div class="event-media">
-          <img
-            class="event-image"
-            [src]="event.image || fallbackEventImage"
-            [alt]="event.title"
-            (error)="onImageError($event)"
-          />
+          <img class="event-image" [src]="event.image || fallbackEventImage" [alt]="event.title"
+            (error)="onImageError($event)" />
         </div>
 
         <div class="event-body">
@@ -107,39 +55,25 @@
           <p class="event-desc"><span class="meta-label">Description:</span> {{ event.description }}</p>
 
           <div class="event-footer">
-            <button
-              type="button"
-              class="comments-btn"
-              (click)="openDetails(event); $event.stopPropagation()"
-            >
+            <button type="button" class="comments-btn" (click)="openDetails(event); $event.stopPropagation()">
               <span class="comments-dot" aria-hidden="true"></span>
               <span class="comments-label">comments</span>
               <span class="comments-count">{{ formatCount(getComments(event.id)) }}</span>
             </button>
 
             <div class="event-icons">
-              <button
-                type="button"
-                class="icon-like"
-                [class.liked]="isLiked(event.id)"
-                (click)="likeEvent(event); $event.stopPropagation()"
-                aria-label="Like event"
-              >
+              <button type="button" class="icon-like" [class.liked]="isLiked(event.id)"
+                (click)="likeEvent(event); $event.stopPropagation()" aria-label="Like event">
                 <span class="heart" aria-hidden="true">&hearts;</span>
                 <span class="icon-count">{{ formatCount(getLikes(event.id)) }}</span>
               </button>
 
-              <button
-                type="button"
-                class="icon-share"
-                (click)="shareEvent(event); $event.stopPropagation()"
-                aria-label="Share event"
-              >
+              <button type="button" class="icon-share" (click)="shareEvent(event); $event.stopPropagation()"
+                aria-label="Share event">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                   <path
                     d="M18 8a3 3 0 1 0-2.82-4H15a3 3 0 0 0 .17 1l-8.2 4.1a3 3 0 1 0 0 4.6l8.2 4.1a3 3 0 1 0 .83-1.6l-8.2-4.1a3.02 3.02 0 0 0 0-2.2l8.2-4.1A3 3 0 0 0 18 8Z"
-                    fill="currentColor"
-                  />
+                    fill="currentColor" />
                 </svg>
               </button>
             </div>
@@ -162,12 +96,8 @@
         x
       </button>
 
-      <img
-        class="details-image"
-        [src]="selectedEvent.image || fallbackEventImage"
-        [alt]="selectedEvent.title"
-        (error)="onImageError($event)"
-      />
+      <img class="details-image" [src]="selectedEvent.image || fallbackEventImage" [alt]="selectedEvent.title"
+        (error)="onImageError($event)" />
       <h2>{{ selectedEvent.title }}</h2>
       <p><strong>Date:</strong> {{ selectedEvent.date }} - {{ selectedEvent.time }}</p>
       <p><strong>Location:</strong> {{ selectedEvent.location }}</p>
@@ -200,7 +130,8 @@
             </div>
             <p class="comment-text">{{ comment.text }}</p>
             <div class="comment-actions">
-              <button type="button" class="comment-like" [class.liked]="isCommentLiked(comment.id)" (click)="toggleCommentLike(comment)">
+              <button type="button" class="comment-like" [class.liked]="isCommentLiked(comment.id)"
+                (click)="toggleCommentLike(comment)">
                 {{ comment.likes }} ♥
               </button>
               <button type="button" class="comment-reply" (click)="replyToComment(comment)">Reply</button>
@@ -215,7 +146,8 @@
                 </div>
                 <p class="comment-text">{{ reply.text }}</p>
                 <div class="comment-actions">
-                  <button type="button" class="comment-like" [class.liked]="isCommentLiked(reply.id)" (click)="toggleCommentLike(reply)">
+                  <button type="button" class="comment-like" [class.liked]="isCommentLiked(reply.id)"
+                    (click)="toggleCommentLike(reply)">
                     {{ reply.likes }} ♥
                   </button>
                   <button type="button" class="comment-reply" (click)="replyToComment(reply)">Reply</button>
@@ -234,15 +166,8 @@
             Replying to {{ commentReplyTargetAuthor }}
             <button type="button" class="cancel-reply" (click)="cancelReply()">Cancel</button>
           </div>
-          <textarea
-            class="comment-input"
-            name="commentText"
-            [(ngModel)]="commentText"
-            rows="2"
-            maxlength="280"
-            placeholder="Write a comment..."
-            required
-          ></textarea>
+          <textarea class="comment-input" name="commentText" [(ngModel)]="commentText" rows="2" maxlength="280"
+            placeholder="Write a comment..." required></textarea>
           <button type="submit" class="comment-submit" [disabled]="!commentText.trim()">Post</button>
         </form>
       </section>

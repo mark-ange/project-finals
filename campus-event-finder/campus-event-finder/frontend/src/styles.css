@@ -9,6 +9,7 @@ html, body {
   overflow-x: hidden;
   background-color: #f0f2f5;
   color: #1a1a2e;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 * {
@@ -32,4 +33,48 @@ html, body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(142, 0, 0, 0.4);
+}
+
+/* ─── Global Responsive Utilities ─────────────────────── */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+input, select, textarea {
+  max-width: 100%;
+}
+
+/* ─── Dark mode ───────────────────────────────────────── */
+html.dark-mode,
+html.dark-mode body {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* ─── Tablet and Mobile Base ──────────────────────────── */
+@media (max-width: 1024px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 13px;
+  }
 }

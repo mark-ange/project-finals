@@ -21,60 +21,24 @@
   z-index: 1;
 }
 
-.profile-header {
-  height: 64px;
-  background: linear-gradient(135deg, #710000 0%, #4a0000 100%);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  position: sticky;
-  top: 0;
-  z-index: 120;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.brand-logo {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-  border-radius: 8px;
-  border: 2px solid rgba(255, 212, 0, 0.5);
-  box-shadow: 0 2px 8px rgba(255, 212, 0, 0.2);
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  color: #ffd400;
-  font-size: 14px;
-  line-height: 1.1;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  letter-spacing: 2px;
-}
-
 .profile-card {
   width: min(640px, 92vw);
-  margin: 40px auto 0;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 26px;
+  margin: 28px auto 0;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 48px 28px 36px;
+  padding: 44px 28px 36px;
   box-sizing: border-box;
-  color: #1a1a2e;
-  border: 1px solid rgba(142, 0, 0, 0.12);
-  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.4),
+    0 0 0 1px rgba(255,255,255,0.05) inset;
   text-align: center;
-  backdrop-filter: blur(6px);
 }
 
 .avatar-wrap {
@@ -88,6 +52,8 @@
   object-fit: cover;
   border: 4px solid rgba(255, 212, 0, 0.55);
   box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+  position: relative;
+  z-index: 1;
 }
 
 .avatar-input {
@@ -103,6 +69,7 @@
   border-radius: 50%;
   border: 0;
   cursor: pointer;
+  z-index: 5;
   background: #8e0000;
   color: #fff;
   font-size: 16px;
@@ -123,7 +90,7 @@
   width: min(460px, 100%);
   text-align: center;
   font-size: 13px;
-  color: #5b5b5b;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .profile-card h1 {
@@ -132,7 +99,8 @@
   line-height: 1.1;
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
-  color: #1a0000;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .profile-details {
@@ -148,25 +116,48 @@
   line-height: 1.4;
   font-weight: 600;
   text-align: left;
-  background: #f8f9fb;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
   padding: 12px 14px;
   border-left: 4px solid #8e0000;
+  border: 1px solid rgba(142, 0, 0, 0.22);
   color: #333;
   box-shadow: inset 0 0 0 1px rgba(142,0,0,0.06);
 }
 
 @media (max-width: 680px) {
-  .profile-header {
-    padding: 0 14px;
-  }
-
   .profile-card {
-    margin: 28px auto 0;
+    margin: 22px auto 0;
     padding: 36px 20px 28px;
   }
 
   .profile-card h1 {
     font-size: 26px;
   }
+}
+
+/* ─── Dark Mode ─────────────────────────────────────── */
+:host-context(.dark-mode) .profile-page {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(18, 18, 18, 0.9)),
+    var(--notifications-bg, none);
+}
+
+:host-context(.dark-mode) .profile-card {
+  background: rgba(30, 30, 30, 0.95);
+  border-color: rgba(255, 212, 0, 0.2);
+}
+
+:host-context(.dark-mode) .profile-card h1 {
+  color: #ffd400;
+}
+
+:host-context(.dark-mode) .detail {
+  background: rgba(30, 30, 30, 0.9);
+  border-color: rgba(255, 212, 0, 0.3);
+  color: #ffffff;
+}
+
+:host-context(.dark-mode) .avatar-message {
+  color: #ffffff;
 }

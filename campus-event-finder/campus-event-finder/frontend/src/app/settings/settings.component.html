@@ -1,19 +1,5 @@
 <div class="settings-page" [style.background-image]="'url(' + backgroundImage + ')'">
-  <header class="settings-header">
-    <div class="brand">
-      <img [src]="logoImage" alt="Liceo logo" class="brand-logo" />
-      <div class="brand-text">
-        <span>LICEO</span>
-        <span>EVENT HUB</span>
-      </div>
-    </div>
-
-    <div class="header-icons">
-      <button type="button" (click)="goHome()" aria-label="Home">
-        <span aria-hidden="true">&#8962;</span>
-      </button>
-    </div>
-  </header>
+  <app-navigation></app-navigation>
 
   <section class="settings-card" aria-label="Settings">
     <h1>Settings</h1>
@@ -28,6 +14,13 @@
         <span class="label">Department</span>
         <input class="input" [value]="currentUser?.department || ''" readonly />
       </label>
+
+      <div class="theme-row" aria-label="Theme preference">
+        <span class="label">Dark mode</span>
+        <button type="button" class="theme-toggle" (click)="toggleDarkMode()">
+          {{ darkMode ? 'On' : 'Off' }}
+        </button>
+      </div>
 
       <button type="submit" class="save-btn" [disabled]="settingsForm.invalid">Save</button>
     </form>

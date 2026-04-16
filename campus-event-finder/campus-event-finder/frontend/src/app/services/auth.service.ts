@@ -39,12 +39,29 @@ export interface RegisterData {
 export class AuthService {
   private readonly apiUrl = 'http://localhost:5000/api/users';
   private readonly currentUserStorageKey = 'currentUser';
+  private readonly profileImageStorageKey = 'profileImage';
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(private http: HttpClient) {
     this.loadCurrentUser();
+  }
+
+  private getThemeKey(userEmail: string): string {
+    return `darkMode_${userEmail}`;
+  }
+
+  getDarkModePreference(): boolean {
+    const user = this.currentUserSubject.value;
+    if (!user) return false;
+    return localStorage.getItem(this.getThemeKey(user.email)) === 'true';
+  }
+
+  setDarkModePreference(enabled: boolean): void {
+    const user = this.currentUserSubject.value;
+    if (!user) return;
+    localStorage.setItem(this.getThemeKey(user.email), String(enabled));
   }
 
   private loadCurrentUser(): void {
@@ -54,6 +71,7 @@ export class AuthService {
     try {
       const parsed = this.normalizeUser(JSON.parse(storedCurrentUser) as User);
       this.currentUserSubject.next(parsed);
+      this.applyDarkModePreference();
     } catch {
       this.currentUserSubject.next(null);
       localStorage.removeItem(this.currentUserStorageKey);
@@ -131,12 +149,22 @@ export class AuthService {
     }).pipe(
       tap(user => {
         const normalized = this.normalizeUser(user);
+        const savedProfileImage = localStorage.getItem(this.profileImageStorageKey);
+        if (savedProfileImage) {
+          normalized.profileImage = savedProfileImage;
+        }
         this.currentUserSubject.next(normalized);
         localStorage.setItem(this.currentUserStorageKey, JSON.stringify(normalized));
+        this.applyDarkModePreference();
       }),
       map(() => ({ success: true, message: 'Login successful' })),
       catchError(() => of({ success: false, message: 'Invalid email or password' }))
     );
+  }
+
+  private applyDarkModePreference(): void {
+    const isDarkMode = this.getDarkModePreference();
+    document.documentElement.classList.toggle('dark-mode', isDarkMode);
   }
 
   private isLiceoEmail(email: string): boolean {
@@ -173,8 +201,13 @@ export class AuthService {
   }
 
   logout(): void {
+    const savedProfileImage = localStorage.getItem(this.profileImageStorageKey);
     this.currentUserSubject.next(null);
     localStorage.removeItem(this.currentUserStorageKey);
+    document.documentElement.classList.remove('dark-mode');
+    if (savedProfileImage) {
+      localStorage.setItem(this.profileImageStorageKey, savedProfileImage);
+    }
   }
 
   isLoggedIn(): boolean {
@@ -238,6 +271,9 @@ export class AuthService {
         const fullUser = { ...currentUser, ...updatedUser };
         this.currentUserSubject.next(fullUser);
         localStorage.setItem(this.currentUserStorageKey, JSON.stringify(fullUser));
+        if (data.profileImage) {
+          localStorage.setItem(this.profileImageStorageKey, data.profileImage);
+        }
       })
     );
   }

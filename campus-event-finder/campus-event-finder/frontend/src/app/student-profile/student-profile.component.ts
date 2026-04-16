@@ -1,22 +1,19 @@
 import { NgIf } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { AuthService, User } from '../services/auth.service';
+import { NavigationComponent } from '../shared/navigation/navigation.component';
 
 @Component({
   selector: 'app-student-profile',
   standalone: true,
-  imports: [NgIf],
+  imports: [NgIf, NavigationComponent],
   templateUrl: './student-profile.component.html',
   styleUrls: ['./student-profile.component.css']
 })
 export class StudentProfileComponent implements OnInit {
-  private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
 
   currentUser: User | null = null;
-
-  readonly logoImage = 'assets/liceo-logo.png';
   readonly defaultProfileImage =
     'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=500&q=80';
   readonly backgroundImage = 'assets/background log-in.png';
@@ -27,18 +24,6 @@ export class StudentProfileComponent implements OnInit {
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.profileImageUrl = this.currentUser?.profileImage || this.defaultProfileImage;
-  }
-
-  goHome(): void {
-    this.router.navigate(['/dashboard']);
-  }
-
-  openNotifications(): void {
-    this.router.navigate(['/notifications']);
-  }
-
-  openSettings(): void {
-    this.router.navigate(['/settings']);
   }
 
   openAvatarPicker(input: HTMLInputElement): void {

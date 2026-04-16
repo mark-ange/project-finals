@@ -1,13 +1,5 @@
 <div class="profile-page" [style.background-image]="'url(' + backgroundImage + ')'">
-  <header class="profile-header">
-    <div class="brand">
-      <img [src]="logoImage" alt="Liceo logo" class="brand-logo" />
-      <div class="brand-text">
-        <span>LICEO</span>
-        <span>EVENT HUB</span>
-      </div>
-    </div>
-  </header>
+  <app-navigation></app-navigation>
 
   <section class="profile-card" aria-label="Student profile card">
     <div class="avatar-wrap">
@@ -33,12 +25,11 @@
         (change)="onAvatarSelected($event)"
       />
     </div>
-    <h1>Student profile</h1>
+    <h1>{{ currentUser?.fullName || 'Student' }}</h1>
 
     <div class="profile-details" *ngIf="currentUser">
-      <p class="detail">{{ currentUser.department }}</p>
       <p class="detail">{{ currentUser.email }}</p>
-      <p class="detail">{{ currentUser.id }}</p>
+      <p class="detail">{{ currentUser.department }}</p>
     </div>
 
     <p class="avatar-message" *ngIf="avatarMessage">{{ avatarMessage }}</p>

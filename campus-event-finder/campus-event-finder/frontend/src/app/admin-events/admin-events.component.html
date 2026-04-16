@@ -1,31 +1,14 @@
 <div class="admin-page">
-  <header class="admin-top">
-    <div class="brand">
-      <img [src]="logoImage" alt="Liceo logo" class="brand-logo" />
-      <div class="brand-text">
-        <span>LICEO</span>
-        <span>EVENT HUB</span>
-      </div>
-    </div>
-
-    <div class="top-icons">
-      <button type="button" class="menu-button" (click)="toggleMenu()" aria-label="Menu">
-        <span aria-hidden="true">&#9776;</span>
-      </button>
-    </div>
-  </header>
-
-  <nav class="admin-menu" *ngIf="menuOpen" aria-label="Admin menu">
-    <button type="button" (click)="goHome()">Home</button>
-    <button type="button" (click)="openCreate()">Create event</button>
-    <button type="button" (click)="openNotifications()">Notifications</button>
-    <button type="button" (click)="openSettings()">Settings</button>
-  </nav>
+  <app-navigation></app-navigation>
 
   <section class="admin-title-area" aria-label="Admin header">
     <div class="title-left">
       <h1>{{ currentUser?.fullName || 'Admin name' }}</h1>
       <h2>{{ currentUser?.department || 'Department' }}</h2>
+    </div>
+
+    <div class="title-actions">
+      <button type="button" class="create-event-btn" (click)="openCreate()">+ Create Event</button>
     </div>
 
     <div *ngIf="isMainAdmin" class="admin-code-panel">
@@ -536,6 +519,7 @@
             <input
               type="checkbox"
               [checked]="registration.attended"
+              [disabled]="!attendanceAllowed"
               (change)="toggleAttendance(registration)"
             />
             <span>{{ registration.attended ? 'Present' : 'Absent' }}</span>

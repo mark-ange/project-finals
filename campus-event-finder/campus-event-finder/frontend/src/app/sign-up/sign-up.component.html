@@ -21,7 +21,6 @@
       </div>
 
       <p class="message error" *ngIf="errorMessage">{{ errorMessage }}</p>
-      <p class="message success" *ngIf="successMessage">{{ successMessage }}</p>
 
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form" id="register-form">
 
@@ -103,6 +102,21 @@
         <span>Already have an account?</span>
         <button type="button" class="back-link" (click)="onBackToLogin()" id="back-to-login-btn">Sign in</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Success Popup -->
+  <div class="popup-backdrop" *ngIf="showSuccessPopup" (click)="closePopup()">
+    <div class="success-popup" (click)="$event.stopPropagation()">
+      <div class="popup-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          <path d="M8 12L11 15L16 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2 class="popup-title">Account Created!</h2>
+      <p class="popup-message">Your account has been successfully created. You can now sign in with your credentials.</p>
+      <button type="button" class="popup-btn" (click)="closePopup()">Continue to Login</button>
     </div>
   </div>
 </div>

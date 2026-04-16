@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService, User } from '../services/auth.service';
+import { NavigationComponent } from '../shared/navigation/navigation.component';
 import { DEPARTMENT_OPTIONS } from '../services/department-directory';
 import {
   EventComment,
@@ -56,7 +57,7 @@ interface AdminEventAnalytics {
   standalone: true,
   templateUrl: './admin-events.component.html',
   styleUrls: ['./admin-events.component.css'],
-  imports: [NgFor, NgIf, NgClass, FormsModule, DatePipe]
+  imports: [NgFor, NgIf, NgClass, FormsModule, DatePipe, NavigationComponent]
 })
 export class AdminEventsComponent implements OnInit {
   private readonly router = inject(Router);
@@ -77,7 +78,6 @@ export class AdminEventsComponent implements OnInit {
   statusMessageType: 'success' | 'error' | 'info' | null = null;
   generatedAdminCode: string | null = null;
   pendingDeleteEventId: string | null = null;
-  menuOpen = false;
   editorOpen = false;
   commentsOpen = false;
   registrationsOpen = false;
@@ -194,15 +194,6 @@ export class AdminEventsComponent implements OnInit {
     this.ensurePageInRange();
   }
 
-  toggleMenu(): void {
-    this.menuOpen = !this.menuOpen;
-  }
-
-  goHome(): void {
-    this.menuOpen = false;
-    this.router.navigate(['/dashboard']);
-  }
-
   private setStatusMessage(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
     this.statusMessage = message;
     this.statusMessageType = type;
@@ -213,14 +204,9 @@ export class AdminEventsComponent implements OnInit {
     this.statusMessageType = null;
   }
 
-  openNotifications(): void {
-    this.menuOpen = false;
-    this.router.navigate(['/notifications']);
-  }
-
-  openSettings(): void {
-    this.menuOpen = false;
-    this.router.navigate(['/settings']);
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 
   get isMainAdmin(): boolean {
@@ -284,7 +270,6 @@ export class AdminEventsComponent implements OnInit {
     this.isEditing = false;
     this.editingEventId = null;
     this.resetForm();
-    this.menuOpen = false;
     this.editorOpen = true;
   }
 
@@ -314,7 +299,6 @@ export class AdminEventsComponent implements OnInit {
       imageFileName: event.image?.startsWith('data:') ? 'Uploaded image' : '',
       status: this.getEventStatus(event)
     };
-    this.menuOpen = false;
     this.editorOpen = true;
   }
 
@@ -599,7 +583,6 @@ export class AdminEventsComponent implements OnInit {
     if (!this.authService.canManageDepartment(event.department)) return;
 
     this.editorOpen = false;
-    this.menuOpen = false;
     this.registrationsOpen = false;
     this.registrationsEvent = null;
     this.commentsEvent = event;
@@ -628,7 +611,6 @@ export class AdminEventsComponent implements OnInit {
     if (!this.authService.canManageDepartment(event.department)) return;
 
     this.editorOpen = false;
-    this.menuOpen = false;
     this.commentsOpen = false;
     this.commentsEvent = null;
     this.registrationsEvent = event;
@@ -653,6 +635,7 @@ export class AdminEventsComponent implements OnInit {
 
   toggleAttendance(registration: EventRegistration): void {
     if (!this.registrationsEvent) return;
+    if (!this.attendanceAllowed) return;
     const registrationsEvent = this.registrationsEvent;
     const nextAttendance = !registration.attended;
     this.engagement
@@ -677,6 +660,13 @@ export class AdminEventsComponent implements OnInit {
           });
         }
       });
+  }
+
+  get attendanceAllowed(): boolean {
+    if (!this.registrationsEvent) return false;
+    // Attendance is only editable after the admin marks the event as "done"
+    // (represented by status === 'inactive' in this project).
+    return this.getEventStatus(this.registrationsEvent) === 'inactive';
   }
 
   getPresentCount(): number {

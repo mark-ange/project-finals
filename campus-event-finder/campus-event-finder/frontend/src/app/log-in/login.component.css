@@ -268,13 +268,68 @@
 
 /* ─── Responsive ─────────────────────────────────────────── */
 @media (max-width: 480px) {
+  .login-page {
+    padding: 16px;
+  }
+
   .login-card {
-    padding: 28px 24px 26px;
-    border-radius: 22px;
+    padding: 24px 20px 22px;
+    border-radius: 20px;
+    width: 100%;
+  }
+
+  .logo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .university-title {
+    font-size: 13px;
+  }
+
+  .card-header {
+    gap: 10px;
   }
 
   .login-button {
-    padding: 0 20px;
+    padding: 0 18px;
     font-size: 13px;
+    height: 42px;
+  }
+
+  .form-input {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .row-actions {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .row-actions .login-button,
+  .row-actions .create-account-button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .app-title {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-card {
+    padding: 20px 16px 18px;
+  }
+
+  .university-title {
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  .app-title {
+    font-size: 22px;
+    letter-spacing: 2px;
   }
 }

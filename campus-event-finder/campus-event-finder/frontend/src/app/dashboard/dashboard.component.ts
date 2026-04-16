@@ -1,32 +1,29 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { DatePipe, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { AuthService, User } from '../services/auth.service';
 import { EventComment, EventEngagementService } from '../services/event-engagement.service';
 import { HubEvent, sortEventsForDisplay } from '../services/event-store';
 import { EventService, EventWithMetrics } from '../services/event.service';
 import { NotificationService } from '../services/notification.service';
+import { NavigationComponent } from '../shared/navigation/navigation.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
-  imports: [NgFor, NgIf, FormsModule, DatePipe]
+  imports: [NgFor, NgIf, FormsModule, DatePipe, NavigationComponent]
 })
 export class DashboardComponent implements OnInit {
-  private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly engagement = inject(EventEngagementService);
   private readonly eventService = inject(EventService);
   private readonly notifications = inject(NotificationService);
 
-  readonly logoImage = 'assets/liceo-logo.png';
   readonly heroImage = 'assets/background log-in.png';
   readonly fallbackEventImage = 'assets/liceo-logo.png';
 
-  menuOpen = false;
   selectedEvent: HubEvent | null = null;
   currentUser: User | null = null;
   statusMessage = '';
@@ -79,15 +76,6 @@ export class DashboardComponent implements OnInit {
         this.likedEvents = new Set();
       }
     });
-  }
-
-  toggleMenu(): void {
-    this.menuOpen = !this.menuOpen;
-  }
-
-  logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
   }
 
   openDetails(event: HubEvent): void {
@@ -145,27 +133,6 @@ export class DashboardComponent implements OnInit {
 
   isLiked(eventId: string): boolean {
     return this.likedEvents.has(eventId);
-
-    // For simplicity, assume we check on demand, but to avoid multiple calls, perhaps cache or call once per event
-    // For now, since it's toggle, we can track locally or call API each time
-    // But to optimize, maybe add a map in component
-    // For this implementation, let's call the API each time isLiked is called, but that's inefficient.
-    // Better to load liked status when loading events.
-
-    // For now, since the user wants toggle, and we have the logic, but to make it work, perhaps use a set for liked events in component.
-    // Actually, let's modify to use the service's isLiked, but since it's observable, need to handle async.
-
-    // To keep it simple, let's add a likedEvents set in the component, and update it on like/unlike.
-    // But for initial load, need to check for each event.
-
-    // For this task, let's assume we call isLiked once per event when needed, but since it's in template, better to have a property.
-
-    // Let's add a likedEvents Map in the component.
-  }
-
-  navigateTo(route: string): void {
-    this.menuOpen = false;
-    this.router.navigate([route]);
   }
 
   private setStatusMessage(message: string, type: 'success' | 'error' | 'info' = 'info'): void {

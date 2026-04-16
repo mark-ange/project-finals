@@ -27,19 +27,13 @@ export class SignUpComponent implements OnInit {
   });
 
   errorMessage = '';
-  successMessage = '';
+  showSuccessPopup = false;
   readonly departments = DEPARTMENT_OPTIONS;
 
   ngOnInit(): void {
     if (this.authService.isLoggedIn()) {
       this.authService.logout();
-      this.setStatusAfterLogout();
     }
-  }
-
-  private setStatusAfterLogout(): void {
-    this.successMessage = 'You were logged out so you can create a new account. Please complete the signup form.';
-    this.errorMessage = '';
   }
 
   onSubmit(): void {
@@ -62,20 +56,21 @@ export class SignUpComponent implements OnInit {
 
       this.authService.register(registerData).subscribe(result => {
         if (result.success) {
-          this.successMessage = result.message;
+          this.showSuccessPopup = true;
           this.errorMessage = '';
-          setTimeout(() => {
-            this.router.navigate(['/login']);
-          }, 2000);
         } else {
           this.errorMessage = result.message;
-          this.successMessage = '';
         }
       });
     }
   }
 
   onBackToLogin(): void {
+    this.router.navigate(['/login']);
+  }
+
+  closePopup(): void {
+    this.showSuccessPopup = false;
     this.router.navigate(['/login']);
   }
 }
