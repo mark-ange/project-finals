@@ -39,6 +39,9 @@ export class DashboardComponent implements OnInit {
 
   commentText = '';
   selectedEventComments: EventComment[] = [];
+  commentReplyTargetId: string | null = null;
+  commentReplyTargetAuthor: string | null = null;
+  likedComments: Set<string> = new Set();
 
   likedEvents: Set<string> = new Set();
 
@@ -91,7 +94,11 @@ export class DashboardComponent implements OnInit {
     this.selectedEvent = event;
     this.clearStatusMessage();
     this.commentText = '';
+    this.commentReplyTargetId = null;
+    this.commentReplyTargetAuthor = null;
     this.selectedEventComments = [];
+    this.likedComments.clear();
+
     this.engagement.fetchComments(event.id).subscribe({
       next: comments => {
         this.selectedEventComments = comments;
@@ -100,6 +107,18 @@ export class DashboardComponent implements OnInit {
         this.selectedEventComments = [];
       }
     });
+
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      this.engagement.fetchCommentLikes(event.id, currentUser.email).subscribe({
+        next: likedCommentIds => {
+          this.likedComments = new Set(likedCommentIds);
+        },
+        error: () => {
+          this.likedComments.clear();
+        }
+      });
+    }
   }
 
   closeDetails(): void {
@@ -221,11 +240,14 @@ export class DashboardComponent implements OnInit {
       .addComment(selectedEvent.id, {
         author,
         role,
-        text: this.commentText
+        text: this.commentText,
+        parentCommentId: this.commentReplyTargetId ?? undefined
       })
       .subscribe({
         next: comment => {
           this.commentText = '';
+          this.commentReplyTargetId = null;
+          this.commentReplyTargetAuthor = null;
           this.selectedEventComments = [comment, ...this.selectedEventComments];
           const adminRecipients = this.authService
             .getDepartmentAdmins(selectedEvent.department)
@@ -238,6 +260,50 @@ export class DashboardComponent implements OnInit {
           });
         }
       });
+  }
+
+  replyToComment(comment: EventComment): void {
+    this.commentReplyTargetId = comment.id;
+    this.commentReplyTargetAuthor = comment.author;
+    this.clearStatusMessage();
+  }
+
+  cancelReply(): void {
+    this.commentReplyTargetId = null;
+    this.commentReplyTargetAuthor = null;
+  }
+
+  isCommentLiked(commentId: string): boolean {
+    return this.likedComments.has(commentId);
+  }
+
+  toggleCommentLike(comment: EventComment): void {
+    const currentUser = this.authService.getCurrentUser();
+    if (!this.selectedEvent || !currentUser) return;
+
+    if (this.isCommentLiked(comment.id)) {
+      this.engagement.unlikeComment(this.selectedEvent.id, comment.id, currentUser.email)
+        .subscribe(likes => {
+          this.likedComments.delete(comment.id);
+          comment.likes = likes;
+        });
+    } else {
+      this.engagement.likeComment(this.selectedEvent.id, comment.id, currentUser.email)
+        .subscribe(likes => {
+          this.likedComments.add(comment.id);
+          comment.likes = likes;
+        });
+    }
+  }
+
+  getTopLevelComments(): EventComment[] {
+    return this.selectedEventComments.filter(comment => !comment.parentCommentId);
+  }
+
+  getReplies(parentId: string): EventComment[] {
+    return this.selectedEventComments
+      .filter(comment => comment.parentCommentId === parentId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }
 
   registerForEvent(event: HubEvent): void {

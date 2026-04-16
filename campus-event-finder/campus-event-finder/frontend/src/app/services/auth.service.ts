@@ -38,14 +38,18 @@ export interface RegisterData {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly apiUrl = 'http://localhost:3000/api/users';
+  private readonly apiUrl = 'http://localhost:5000/api/users';
   private readonly usersStorageKey = 'users';
+  private readonly adminCodesStorageKey = 'adminCodes';
+  private readonly resetTokensStorageKey = 'resetTokens';
   private readonly currentUserStorageKey = 'currentUser';
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
   private users: User[] = [];
+  private adminCodes: string[] = [];
+  private resetTokens: Array<{ email: string; token: string; createdAt: string }> = [];
 
   constructor(private http: HttpClient) {
     this.loadUsers();

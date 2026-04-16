@@ -50,12 +50,16 @@ CREATE TABLE IF NOT EXISTS event_metrics (
 CREATE TABLE IF NOT EXISTS event_comments (
   id VARCHAR(50) PRIMARY KEY,
   event_id VARCHAR(32) NOT NULL,
+  parent_comment_id VARCHAR(50) NULL,
   author VARCHAR(120) NOT NULL,
   role VARCHAR(20) NOT NULL,
   text TEXT NOT NULL,
+  likes INT NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL,
   CONSTRAINT fk_event_comments_event
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+  CONSTRAINT fk_event_comments_parent
+    FOREIGN KEY (parent_comment_id) REFERENCES event_comments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 4. Event Registrations Table
@@ -85,7 +89,18 @@ CREATE TABLE IF NOT EXISTS user_likes (
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 6. Admin Codes Table
+-- 6. Comment Likes Table
+CREATE TABLE IF NOT EXISTS comment_likes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_email VARCHAR(150) NOT NULL,
+  comment_id VARCHAR(50) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_user_comment (user_email, comment_id),
+  CONSTRAINT fk_comment_likes_comment
+    FOREIGN KEY (comment_id) REFERENCES event_comments(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 7. Admin Codes Table
 CREATE TABLE IF NOT EXISTS admin_codes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   code VARCHAR(50) NOT NULL UNIQUE,

@@ -30,9 +30,10 @@ export class ForgotPasswordComponent {
     if (this.requestForm.invalid) return;
 
     const email = this.requestForm.value.email ?? '';
-    const result = this.authService.requestPasswordReset(email);
-    this.phase = 'done';
-    this.message = result.message;
+    this.authService.requestPasswordReset(email).subscribe(result => {
+      this.phase = 'done';
+      this.message = result.message;
+    });
   }
 
   backToLogin(): void {

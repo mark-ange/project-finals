@@ -70,9 +70,10 @@ export class UserListComponent implements OnInit {
     this.resetMessage = '';
     this.resetMessageType = null;
 
-    const result = this.authService.requestPasswordReset(user.email);
-    this.resetMessage = result.message;
-    this.resetMessageType = result.success ? 'success' : 'error';
+    this.authService.requestPasswordReset(user.email).subscribe(result => {
+      this.resetMessage = result.message;
+      this.resetMessageType = result.success ? 'success' : 'error';
+    });
   }
 
   trackByUserId(index: number, user: User): number {

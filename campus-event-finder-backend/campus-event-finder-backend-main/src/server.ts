@@ -71,7 +71,11 @@ const run = async (): Promise<void> => {
       .map(statement => statement.trim())
       .filter(statement => statement.length > 0 && !statement.startsWith('--'));
 
-    const migrationStatements = ['ALTER TABLE events MODIFY COLUMN image MEDIUMTEXT NULL'];
+    const migrationStatements = [
+      'ALTER TABLE events MODIFY COLUMN image MEDIUMTEXT NULL',
+      'ALTER TABLE event_comments ADD COLUMN IF NOT EXISTS parent_comment_id VARCHAR(50) NULL',
+      'ALTER TABLE event_comments ADD COLUMN IF NOT EXISTS likes INT NOT NULL DEFAULT 0'
+    ];
 
     for (const statement of [...statements, ...migrationStatements]) {
       await db.query(statement);

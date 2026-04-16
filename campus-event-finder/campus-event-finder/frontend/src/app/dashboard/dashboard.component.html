@@ -192,13 +192,36 @@
         </div>
 
         <div class="comments-list" *ngIf="selectedEventComments.length; else noComments">
-          <div class="comment" *ngFor="let comment of selectedEventComments; trackBy: trackByCommentId">
+          <div class="comment" *ngFor="let comment of getTopLevelComments(); trackBy: trackByCommentId">
             <div class="comment-head">
               <span class="comment-author">{{ comment.author }}</span>
               <span class="comment-role">{{ comment.role }}</span>
               <span class="comment-time">{{ comment.createdAt | date: 'short' }}</span>
             </div>
             <p class="comment-text">{{ comment.text }}</p>
+            <div class="comment-actions">
+              <button type="button" class="comment-like" [class.liked]="isCommentLiked(comment.id)" (click)="toggleCommentLike(comment)">
+                {{ comment.likes }} ♥
+              </button>
+              <button type="button" class="comment-reply" (click)="replyToComment(comment)">Reply</button>
+            </div>
+
+            <div class="comment-replies" *ngIf="getReplies(comment.id).length">
+              <div class="comment reply" *ngFor="let reply of getReplies(comment.id); trackBy: trackByCommentId">
+                <div class="comment-head">
+                  <span class="comment-author">{{ reply.author }}</span>
+                  <span class="comment-role">{{ reply.role }}</span>
+                  <span class="comment-time">{{ reply.createdAt | date: 'short' }}</span>
+                </div>
+                <p class="comment-text">{{ reply.text }}</p>
+                <div class="comment-actions">
+                  <button type="button" class="comment-like" [class.liked]="isCommentLiked(reply.id)" (click)="toggleCommentLike(reply)">
+                    {{ reply.likes }} ♥
+                  </button>
+                  <button type="button" class="comment-reply" (click)="replyToComment(reply)">Reply</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -207,6 +230,10 @@
         </ng-template>
 
         <form class="comment-form" (ngSubmit)="addComment()">
+          <div *ngIf="commentReplyTargetAuthor" class="replying-to">
+            Replying to {{ commentReplyTargetAuthor }}
+            <button type="button" class="cancel-reply" (click)="cancelReply()">Cancel</button>
+          </div>
           <textarea
             class="comment-input"
             name="commentText"

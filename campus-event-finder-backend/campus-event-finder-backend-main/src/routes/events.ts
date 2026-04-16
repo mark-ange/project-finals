@@ -111,16 +111,44 @@ async function seedMockEngagementForEvent(eventId: string, department: string): 
 
   const currentComments = await countRows('event_comments', 'event_id = ?', [eventId]);
   const targetComments = Math.max(110, currentComments);
+  const topLevelCommentIds: string[] = [];
+
   for (let index = currentComments + 1; index <= targetComments; index += 1) {
     const commentId = `comment_${eventId}_${index}`;
     const author = SAMPLE_NAMES[randomInt(0, SAMPLE_NAMES.length - 1)];
     const role = index % 8 === 0 ? 'admin' : 'student';
     const text = COMMENT_TEMPLATES[randomInt(0, COMMENT_TEMPLATES.length - 1)];
     const createdAt = new Date(Date.now() - randomInt(0, 30) * 24 * 60 * 60 * 1000);
+    const likes = randomInt(0, 18);
 
     await db.query(
-      'INSERT IGNORE INTO event_comments (id, event_id, author, role, text, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-      [commentId, eventId, author, role, text, createdAt]
+      'INSERT IGNORE INTO event_comments (id, event_id, parent_comment_id, author, role, text, created_at, likes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [commentId, eventId, null, author, role, text, createdAt, likes]
+    );
+    topLevelCommentIds.push(commentId);
+  }
+
+  if (topLevelCommentIds.length === 0) {
+    const [existingRows] = await db.query<RowDataPacket[]>(
+      'SELECT id FROM event_comments WHERE event_id = ? AND parent_comment_id IS NULL',
+      [eventId]
+    );
+    topLevelCommentIds.push(...existingRows.map(row => row.id));
+  }
+
+  const replyCount = Math.min(Math.max(15, Math.floor(topLevelCommentIds.length * 0.18)), 20);
+  for (let replyIndex = 1; replyIndex <= replyCount && topLevelCommentIds.length > 0; replyIndex += 1) {
+    const parentCommentId = topLevelCommentIds[randomInt(0, topLevelCommentIds.length - 1)];
+    const commentId = `reply_${eventId}_${replyIndex}`;
+    const author = SAMPLE_NAMES[randomInt(0, SAMPLE_NAMES.length - 1)];
+    const role = replyIndex % 10 === 0 ? 'admin' : 'student';
+    const text = COMMENT_TEMPLATES[randomInt(0, COMMENT_TEMPLATES.length - 1)];
+    const createdAt = new Date(Date.now() - randomInt(0, 15) * 24 * 60 * 60 * 1000);
+    const likes = randomInt(0, 8);
+
+    await db.query(
+      'INSERT IGNORE INTO event_comments (id, event_id, parent_comment_id, author, role, text, created_at, likes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [commentId, eventId, parentCommentId, author, role, text, createdAt, likes]
     );
   }
 
@@ -281,23 +309,21 @@ router.post('/:id/likes', async (req: Request, res: Response) => {
     const { user_email } = req.body;
     if (!user_email) return res.status(400).json({ message: 'User email required.' });
 
-    // Check if event exists
     const [eventRows] = await db.query<RowDataPacket[]>('SELECT id FROM events WHERE id = ?', [eventId]);
     if (!eventRows.length) return res.status(404).json({ message: 'Event not found.' });
 
-    // Insert like if not exists
-    await db.query(
-      'INSERT INTO user_likes (user_email, event_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE user_email = user_email',
+    const [existingRows] = await db.query<RowDataPacket[]>(
+      'SELECT id FROM user_likes WHERE user_email = ? AND event_id = ?',
       [user_email, eventId]
     );
 
-    // Count total likes
-    const [likeRows] = await db.query<RowDataPacket[]>('SELECT COUNT(*) as likes FROM user_likes WHERE event_id = ?', [eventId]);
-    const likes = likeRows[0].likes;
+    if (!existingRows.length) {
+      await db.query('INSERT INTO user_likes (user_email, event_id) VALUES (?, ?)', [user_email, eventId]);
+      await db.query('INSERT INTO event_metrics (event_id, likes, shares) VALUES (?, 1, 0) ON DUPLICATE KEY UPDATE likes = likes + 1', [eventId]);
+    }
 
-    // Update event_metrics for compatibility
-    await db.query('INSERT INTO event_metrics (event_id, likes, shares) VALUES (?, ?, 0) ON DUPLICATE KEY UPDATE likes = ?', [eventId, likes, likes]);
-
+    const [rows] = await db.query<RowDataPacket[]>('SELECT likes FROM event_metrics WHERE event_id = ?', [eventId]);
+    const likes = rows[0]?.likes ?? 0;
     return res.json({ likes });
   } catch (error) {
     return res.status(500).json({ message: 'Failed to like event.' });
@@ -310,16 +336,18 @@ router.delete('/:id/likes', async (req: Request, res: Response) => {
     const { user_email } = req.body;
     if (!user_email) return res.status(400).json({ message: 'User email required.' });
 
-    // Delete like
-    await db.query('DELETE FROM user_likes WHERE user_email = ? AND event_id = ?', [user_email, eventId]);
+    const [existingRows] = await db.query<RowDataPacket[]>(
+      'SELECT id FROM user_likes WHERE user_email = ? AND event_id = ?',
+      [user_email, eventId]
+    );
 
-    // Count total likes
-    const [likeRows] = await db.query<RowDataPacket[]>('SELECT COUNT(*) as likes FROM user_likes WHERE event_id = ?', [eventId]);
-    const likes = likeRows[0].likes;
+    if (existingRows.length) {
+      await db.query('DELETE FROM user_likes WHERE user_email = ? AND event_id = ?', [user_email, eventId]);
+      await db.query('UPDATE event_metrics SET likes = GREATEST(0, likes - 1) WHERE event_id = ?', [eventId]);
+    }
 
-    // Update event_metrics
-    await db.query('UPDATE event_metrics SET likes = ? WHERE event_id = ?', [likes, eventId]);
-
+    const [rows] = await db.query<RowDataPacket[]>('SELECT likes FROM event_metrics WHERE event_id = ?', [eventId]);
+    const likes = rows[0]?.likes ?? 0;
     return res.json({ likes });
   } catch (error) {
     return res.status(500).json({ message: 'Failed to unlike event.' });
@@ -368,14 +396,16 @@ router.post('/:id/shares', async (req: Request, res: Response) => {
 router.get('/:id/comments', async (req: Request, res: Response) => {
   try {
     const [rows] = await db.query<RowDataPacket[]>(
-      'SELECT id, author, role, text, created_at AS createdAt FROM event_comments WHERE event_id = ? ORDER BY created_at DESC',
+      'SELECT id, parent_comment_id AS parentCommentId, author, role, text, likes, created_at AS createdAt FROM event_comments WHERE event_id = ? ORDER BY created_at DESC',
       [req.params.id]
     );
     return res.json(rows.map(row => ({
       id: row.id,
+      parentCommentId: row.parentCommentId,
       author: row.author,
       role: row.role,
       text: row.text,
+      likes: row.likes,
       createdAt: row.createdAt
     })));
   } catch (error) {
@@ -383,24 +413,43 @@ router.get('/:id/comments', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/:id/comment-likes', async (req: Request, res: Response) => {
+  try {
+    const eventId = req.params.id;
+    const user_email = req.query.user_email as string;
+    if (!user_email) return res.status(400).json({ message: 'User email required.' });
+
+    const [rows] = await db.query<RowDataPacket[]>(
+      'SELECT comment_id FROM comment_likes WHERE user_email = ? AND comment_id IN (SELECT id FROM event_comments WHERE event_id = ?)',
+      [user_email, eventId]
+    );
+    const likedCommentIds = rows.map(row => row.comment_id);
+    return res.json({ likedCommentIds });
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to fetch liked comments.' });
+  }
+});
+
 router.post('/:id/comments', async (req: Request, res: Response) => {
   try {
     const eventId = req.params.id;
-    const { author, role, text } = req.body as { author: string; role: string; text: string };
+    const { author, role, text, parentCommentId } = req.body as { author: string; role: string; text: string; parentCommentId?: string };
 
     const commentId = `comment_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const createdAt = new Date();
 
     await db.query(
-      'INSERT INTO event_comments (id, event_id, author, role, text, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-      [commentId, eventId, author, role, text, createdAt]
+      'INSERT INTO event_comments (id, event_id, parent_comment_id, author, role, text, created_at, likes) VALUES (?, ?, ?, ?, ?, ?, ?, 0)',
+      [commentId, eventId, parentCommentId || null, author, role, text, createdAt]
     );
 
     return res.status(201).json({
       id: commentId,
+      parentCommentId: parentCommentId || null,
       author,
       role,
       text,
+      likes: 0,
       createdAt: createdAt.toISOString()
     });
   } catch (error) {
@@ -418,6 +467,56 @@ router.delete('/:id/comments/:commentId', async (req: Request, res: Response) =>
     return res.json({ message: 'Comment deleted.' });
   } catch (error) {
     return res.status(500).json({ message: 'Failed to delete comment.' });
+  }
+});
+
+router.post('/:id/comments/:commentId/likes', async (req: Request, res: Response) => {
+  try {
+    const eventId = req.params.id;
+    const commentId = req.params.commentId;
+    const { user_email } = req.body;
+    if (!user_email) return res.status(400).json({ message: 'User email required.' });
+
+    const [existingRows] = await db.query<RowDataPacket[]>(
+      'SELECT id FROM comment_likes WHERE user_email = ? AND comment_id = ?',
+      [user_email, commentId]
+    );
+
+    if (!existingRows.length) {
+      await db.query('INSERT INTO comment_likes (user_email, comment_id) VALUES (?, ?)', [user_email, commentId]);
+      await db.query('UPDATE event_comments SET likes = likes + 1 WHERE id = ?', [commentId]);
+    }
+
+    const [commentRows] = await db.query<RowDataPacket[]>('SELECT likes FROM event_comments WHERE id = ?', [commentId]);
+    const likes = commentRows[0]?.likes ?? 0;
+    return res.json({ likes });
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to like comment.' });
+  }
+});
+
+router.delete('/:id/comments/:commentId/likes', async (req: Request, res: Response) => {
+  try {
+    const eventId = req.params.id;
+    const commentId = req.params.commentId;
+    const { user_email } = req.body;
+    if (!user_email) return res.status(400).json({ message: 'User email required.' });
+
+    const [existingRows] = await db.query<RowDataPacket[]>(
+      'SELECT id FROM comment_likes WHERE user_email = ? AND comment_id = ?',
+      [user_email, commentId]
+    );
+
+    if (existingRows.length) {
+      await db.query('DELETE FROM comment_likes WHERE user_email = ? AND comment_id = ?', [user_email, commentId]);
+      await db.query('UPDATE event_comments SET likes = GREATEST(0, likes - 1) WHERE id = ?', [commentId]);
+    }
+
+    const [commentRows] = await db.query<RowDataPacket[]>('SELECT likes FROM event_comments WHERE id = ?', [commentId]);
+    const likes = commentRows[0]?.likes ?? 0;
+    return res.json({ likes });
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to unlike comment.' });
   }
 });
 

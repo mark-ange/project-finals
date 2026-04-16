@@ -6,9 +6,11 @@ import { HubEvent } from './event-store';
 
 export interface EventComment {
   id: string;
+  parentCommentId?: string | null;
   author: string;
   role: UserRole;
   text: string;
+  likes: number;
   createdAt: string;
 }
 
@@ -36,6 +38,7 @@ interface CommentInput {
   author: string;
   role: UserRole;
   text: string;
+  parentCommentId?: string | null;
 }
 
 interface RegistrationInput {
@@ -152,6 +155,24 @@ export class EventEngagementService {
       tap(() => {
         this.comments.set(eventId, this.getCommentCount(eventId) + 1);
       })
+    );
+  }
+
+  likeComment(eventId: string, commentId: string, userEmail: string): Observable<number> {
+    return this.http.post<{ likes: number }>(`${this.apiUrl}/${eventId}/comments/${commentId}/likes`, { user_email: userEmail }).pipe(
+      map(response => response.likes)
+    );
+  }
+
+  unlikeComment(eventId: string, commentId: string, userEmail: string): Observable<number> {
+    return this.http.delete<{ likes: number }>(`${this.apiUrl}/${eventId}/comments/${commentId}/likes`, { body: { user_email: userEmail } }).pipe(
+      map(response => response.likes)
+    );
+  }
+
+  fetchCommentLikes(eventId: string, userEmail: string): Observable<string[]> {
+    return this.http.get<{ likedCommentIds: string[] }>(`${this.apiUrl}/${eventId}/comment-likes`, { params: { user_email: userEmail } }).pipe(
+      map(response => response.likedCommentIds)
     );
   }
 
