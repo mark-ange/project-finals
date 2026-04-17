@@ -417,7 +417,7 @@
 
         <label class="field">
           <span class="label">Image URL</span>
-          <input class="input" [(ngModel)]="formData.imageUrl" name="imageUrl" placeholder="https://example.com/image.jpg" />
+          <input class="input" [(ngModel)]="formData.imageUrl" name="imageUrl" placeholder="https://example.com/image.jpg" (ngModelChange)="onImageUrlChanged($event)" />
           <span class="hint">Or upload a local image file below.</span>
         </label>
 
