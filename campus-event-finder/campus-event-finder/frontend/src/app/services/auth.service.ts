@@ -39,7 +39,6 @@ export interface RegisterData {
 export class AuthService {
   private readonly apiUrl = 'http://localhost:5000/api/users';
   private readonly currentUserStorageKey = 'currentUser';
-  private readonly profileImageStorageKey = 'profileImage';
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
@@ -149,10 +148,6 @@ export class AuthService {
     }).pipe(
       tap(user => {
         const normalized = this.normalizeUser(user);
-        const savedProfileImage = localStorage.getItem(this.profileImageStorageKey);
-        if (savedProfileImage) {
-          normalized.profileImage = savedProfileImage;
-        }
         this.currentUserSubject.next(normalized);
         localStorage.setItem(this.currentUserStorageKey, JSON.stringify(normalized));
         this.applyDarkModePreference();
@@ -186,28 +181,44 @@ export class AuthService {
     return this.http.get<{ codes: Array<{ code: string; created_by: string; created_at: string }> }>(`${this.apiUrl}/admin-codes`);
   }
 
-  requestPasswordReset(email: string): Observable<{ success: boolean; message: string; link?: string }> {
+  requestPasswordReset(rawEmail: string): Observable<{ success: boolean; message: string; link?: string }> {
+    const email = this.normalizeEmail(rawEmail);
     return this.http.post<{ token: string; link: string }>(`${this.apiUrl}/reset-tokens`, { email }).pipe(
       map(response => ({
         success: true,
-        message: `Password reset link generated successfully. Share this with the user: ${response.link}`,
+        message: 'Reset link generated.',
         link: response.link
-      })),
-      catchError(() => of({
-        success: false,
-        message: 'Failed to generate reset link.'
       }))
     );
   }
 
+  resetPassword(token: string, password: string): Observable<{ success: boolean; message: string }> {
+    return this.http.put<{ success: boolean; message: string }>(`${this.apiUrl}/reset-password`, { token, password }).pipe(
+      map(response => response),
+      catchError(() => of({
+        success: false,
+        message: 'Failed to reset password.'
+      }))
+    );
+  }
+
+  validateResetToken(token: string): Observable<{ valid: boolean; email: string }> {
+    return this.http.post<{ valid: boolean; email: string }>(`${this.apiUrl}/validate-reset-token`, { token });
+  }
+
+  setPassword(token: string, password: string): Observable<{ success: boolean; message: string }> {
+    return this.http.put<{ success: boolean; message: string }>(`${this.apiUrl}/reset-password`, { token, password }).pipe(
+      catchError(error => {
+        const message = error.error?.message || 'Failed to reset password.';
+        return of({ success: false, message });
+      })
+    );
+  }
+
   logout(): void {
-    const savedProfileImage = localStorage.getItem(this.profileImageStorageKey);
     this.currentUserSubject.next(null);
     localStorage.removeItem(this.currentUserStorageKey);
     document.documentElement.classList.remove('dark-mode');
-    if (savedProfileImage) {
-      localStorage.setItem(this.profileImageStorageKey, savedProfileImage);
-    }
   }
 
   isLoggedIn(): boolean {
@@ -271,9 +282,6 @@ export class AuthService {
         const fullUser = { ...currentUser, ...updatedUser };
         this.currentUserSubject.next(fullUser);
         localStorage.setItem(this.currentUserStorageKey, JSON.stringify(fullUser));
-        if (data.profileImage) {
-          localStorage.setItem(this.profileImageStorageKey, data.profileImage);
-        }
       })
     );
   }

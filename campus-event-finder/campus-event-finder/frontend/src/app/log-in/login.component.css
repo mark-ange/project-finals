@@ -253,17 +253,48 @@
   color: #ffd400;
 }
 
+/* ─── Card Footer Links ──────────────────────────────────── */
+.card-footer-links {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.about-link {
+  color: #ffd400;
+  text-decoration: none;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  border: 1px solid rgba(255, 212, 0, 0.3);
+  padding: 6px 16px;
+  border-radius: 999px;
+  transition: all 0.2s;
+}
+
+.about-link:hover {
+  background: rgba(255, 212, 0, 0.1);
+  border-color: #ffd400;
+  transform: translateY(-1px);
+}
+
 /* ─── App Title ──────────────────────────────────────────── */
 .app-title {
   margin: 24px 0 0;
   text-align: center;
-  color: rgba(255,255,255,0.12);
+  color: rgba(255, 255, 255, 0.4); /* Increased opacity */
   font-size: 36px;
   line-height: 1;
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
   letter-spacing: 4px;
   text-transform: uppercase;
+  text-shadow: 0 0 20px rgba(255, 212, 0, 0.15); /* Suble gold glow */
+  transition: color 0.3s;
+}
+
+.login-card:hover .app-title {
+  color: rgba(255, 212, 0, 0.6); /* Highlights on hover */
 }
 
 /* ─── Responsive ─────────────────────────────────────────── */
@@ -331,5 +362,112 @@
   .app-title {
     font-size: 22px;
     letter-spacing: 2px;
+  }
+}
+
+/* ─── Footer ─────────────────────────────────────────────── */
+.login-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 40px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  color: #fff;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.footer-sidebar {
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: fadeInFooter 1s ease-out;
+  pointer-events: auto;
+}
+
+.footer-sidebar.left {
+  text-align: left;
+}
+
+.footer-sidebar.right {
+  text-align: right;
+  width: 280px;
+}
+
+@keyframes fadeInFooter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.footer-group h3 {
+  color: #ffd400;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.footer-group p {
+  margin: 0 0 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.core-values-text {
+  font-weight: 600;
+  color: #ffd400 !important;
+  font-size: 12px !important;
+  letter-spacing: 0.5px;
+}
+
+.footer-group strong {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+.footer-sidebar.right .footer-group p {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 1200px) {
+  .footer-sidebar {
+    width: 280px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .login-footer {
+    position: relative;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 40px;
+    background: rgba(0,0,0,0.5);
+    margin-top: 40px;
+    padding-top: 40px;
+    padding-bottom: 60px;
+  }
+
+  .footer-sidebar, 
+  .footer-sidebar.right {
+    width: 100%;
+    text-align: center;
+    align-items: center;
+  }
+
+  .footer-sidebar.right .footer-group p {
+    justify-content: center;
   }
 }

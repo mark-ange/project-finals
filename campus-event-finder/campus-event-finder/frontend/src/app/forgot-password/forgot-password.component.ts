@@ -1,10 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router, Params } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-
-type Phase = 'request' | 'done';
 
 @Component({
   selector: 'app-forgot-password',
@@ -13,30 +11,104 @@ type Phase = 'request' | 'done';
   templateUrl: './forgot-password.component.html',
   styleUrls: ['./forgot-password.component.css']
 })
-export class ForgotPasswordComponent {
-  private readonly formBuilder = inject(FormBuilder);
-  private readonly router = inject(Router);
-  private readonly authService = inject(AuthService);
+export class ForgotPasswordComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private authService = inject(AuthService);
 
-  phase: Phase = 'request';
+  phase: 'request' | 'reset' | 'done' | 'error' = 'request';
   message = '';
+  resetLink = '';
+  token = '';
+  userEmail = '';
+  showPassword = false;
 
-  readonly requestForm = this.formBuilder.group({
+  readonly requestForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]]
   });
 
-  onSubmitRequest(): void {
-    this.message = '';
-    if (this.requestForm.invalid) return;
+  readonly resetForm = this.fb.group({
+    password: ['', [Validators.required, Validators.minLength(6)]],
+    confirmPassword: ['', Validators.required]
+  });
 
-    const email = this.requestForm.value.email ?? '';
-    this.authService.requestPasswordReset(email).subscribe(result => {
-      this.phase = 'done';
-      this.message = result.message;
+  ngOnInit(): void {
+    this.route.queryParams.subscribe((params: Params) => {
+      if (params['token']) {
+        this.token = params['token'];
+        this.verifyToken();
+      }
     });
   }
 
-  backToLogin(): void {
+  private verifyToken(): void {
+    this.authService.validateResetToken(this.token).subscribe({
+      next: (res) => {
+        if (res.valid) {
+          this.userEmail = res.email;
+          this.phase = 'reset';
+        } else {
+          this.phase = 'error';
+          this.message = 'This link has expired or is invalid.';
+        }
+      },
+      error: () => {
+        this.phase = 'error';
+        this.message = 'Verification failed. Please request a new link.';
+      }
+    });
+  }
+
+  onSubmitRequest(): void {
+    const email = this.requestForm.value.email ?? '';
+    this.message = '';
+
+    this.authService.requestPasswordReset(email).subscribe({
+      next: (res) => {
+        this.phase = 'done';
+        this.resetLink = res.link || '';
+        this.message = 'Account verified! Your reset link is ready below.';
+      },
+      error: (err) => {
+        // Handle the "No account found" case
+        if (err.status === 404) {
+          alert('Access Denied: No account associated with this email.');
+        } else {
+          alert('Server error. Please try again later.');
+        }
+      }
+    });
+  }
+
+  onSubmitReset(): void {
+    const password = this.resetForm.value.password ?? '';
+    if (password !== this.resetForm.value.confirmPassword) {
+      this.message = 'Passwords do not match.';
+      return;
+    }
+
+    this.authService.setPassword(this.token, password).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.phase = 'done';
+          this.resetLink = ''; // Show final success screen
+          this.message = 'Your password has been successfully updated.';
+        } else {
+          this.message = res.message || 'Failed to reset password. Link might be used.';
+        }
+      },
+      error: () => {
+        this.message = 'Failed to reset password. Link might be used or network error occurred.';
+      }
+    });
+  }
+
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  backToLogin() {
     this.router.navigate(['/login']);
   }
 }

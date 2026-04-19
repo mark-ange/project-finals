@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, ElementRef } from '@angular/core';
 import { DatePipe, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../services/auth.service';
@@ -20,6 +20,8 @@ export class DashboardComponent implements OnInit {
   private readonly engagement = inject(EventEngagementService);
   private readonly eventService = inject(EventService);
   private readonly notifications = inject(NotificationService);
+
+  @ViewChild('commentsContainer') commentsContainer!: ElementRef;
 
   readonly heroImage = 'assets/background log-in.png';
   readonly fallbackEventImage = 'assets/liceo-logo.png';
@@ -215,7 +217,12 @@ export class DashboardComponent implements OnInit {
           this.commentText = '';
           this.commentReplyTargetId = null;
           this.commentReplyTargetAuthor = null;
-          this.selectedEventComments = [comment, ...this.selectedEventComments];
+          this.selectedEventComments.push(comment);
+          setTimeout(() => {
+            if (this.commentsContainer) {
+              this.commentsContainer.nativeElement.scrollTop = this.commentsContainer.nativeElement.scrollHeight;
+            }
+          }, 50);
           this.authService.getDepartmentAdmins(selectedEvent.department).subscribe(admins => {
             const adminRecipients = admins.filter(user => user.id !== this.currentUser?.id);
             this.notifications.notifyUsers(adminRecipients, {

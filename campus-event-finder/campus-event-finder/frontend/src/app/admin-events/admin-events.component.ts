@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, ElementRef } from '@angular/core';
 import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -65,6 +65,7 @@ export class AdminEventsComponent implements OnInit {
   private readonly engagement = inject(EventEngagementService);
   private readonly eventService = inject(EventService);
   private readonly notifications = inject(NotificationService);
+  @ViewChild('commentsContainer') commentsContainer!: ElementRef;
   private readonly maxImageSourceBytes = 12_000_000;
   private readonly maxStoredImageLength = 3_000_000;
   private readonly maxOptimizedImageDimension = 1600;
@@ -508,6 +509,54 @@ export class AdminEventsComponent implements OnInit {
     this.imageUploadMessage = '';
   }
 
+  async onImagePaste(event: ClipboardEvent): Promise<void> {
+    const clipboardData = event.clipboardData;
+    if (!clipboardData) {
+      return;
+    }
+
+    const items = clipboardData.items;
+    if (!items) {
+      return;
+    }
+
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        event.preventDefault();
+        const file = item.getAsFile();
+        if (!file) {
+          return;
+        }
+
+        this.imageUploadMessage = '';
+        this.saveErrorMessage = '';
+        this.formData.imageUrl = '';
+
+        if (file.size > this.maxImageSourceBytes) {
+          this.imageUploadMessage = `Image too large. Use images under ${this.formatUploadLimit(this.maxImageSourceBytes)}.`;
+          return;
+        }
+
+        this.isProcessingImage = true;
+        this.imageUploadMessage = 'Preparing pasted image...';
+
+        try {
+          const result = await this.prepareImageForUpload(file);
+          this.formData.imageFileName = 'Pasted image';
+          this.formData.imageFileData = result.dataUrl;
+          this.imageUploadMessage = result.message;
+        } catch {
+          this.formData.imageFileData = '';
+          this.formData.imageFileName = '';
+          this.imageUploadMessage = 'Could not process pasted image. Try a different image or use a URL.';
+        } finally {
+          this.isProcessingImage = false;
+        }
+        return;
+      }
+    }
+  }
+
   get imagePreview(): string {
     return this.formData.imageFileData || this.formData.imageUrl || '';
   }
@@ -692,8 +741,13 @@ export class AdminEventsComponent implements OnInit {
       .subscribe({
         next: comment => {
           this.commentText = '';
-          this.eventComments = [comment, ...this.eventComments];
+          this.eventComments.push(comment);
           this.refreshAnalytics();
+          setTimeout(() => {
+            if (this.commentsContainer) {
+              this.commentsContainer.nativeElement.scrollTop = this.commentsContainer.nativeElement.scrollHeight;
+            }
+          }, 50);
           this.notifyDepartmentStudents(
             commentsEvent.department,
             'New admin update',

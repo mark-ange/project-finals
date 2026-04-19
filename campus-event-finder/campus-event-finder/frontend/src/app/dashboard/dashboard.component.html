@@ -105,7 +105,7 @@
       <p><strong>About:</strong> {{ selectedEvent.description }}</p>
 
       <div class="details-actions">
-        <button type="button" class="details-register" (click)="registerForEvent(selectedEvent)">
+        <button *ngIf="currentUser?.role === 'student'" type="button" class="details-register" (click)="registerForEvent(selectedEvent)">
           Register
         </button>
         <button type="button" class="details-share" (click)="shareEvent(selectedEvent)">Share</button>
@@ -121,7 +121,7 @@
           <span class="comments-total">{{ formatCount(getComments(selectedEvent.id)) }}</span>
         </div>
 
-        <div class="comments-list" *ngIf="selectedEventComments.length; else noComments">
+        <div class="comments-list" #commentsContainer *ngIf="selectedEventComments.length; else noComments">
           <div class="comment" *ngFor="let comment of getTopLevelComments(); trackBy: trackByCommentId">
             <div class="comment-head">
               <span class="comment-author">{{ comment.author }}</span>

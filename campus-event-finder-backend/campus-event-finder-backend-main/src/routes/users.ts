@@ -42,7 +42,7 @@ router.get('/', async (_req: Request, res: Response) => {
   try {
     await seedUsersIfEmpty();
     const [rows] = await db.query<RowDataPacket[]>(
-      'SELECT id, name AS fullName, email, department, role FROM users ORDER BY id DESC'
+      'SELECT id, name AS fullName, email, department, role, profile_image AS profileImage FROM users ORDER BY id DESC'
     );
     return res.json(rows);
   } catch (error) {
@@ -60,7 +60,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     const [rows] = await db.query<RowDataPacket[]>(
-      'SELECT id, name AS fullName, email, department, role FROM users WHERE id = ?',
+      'SELECT id, name AS fullName, email, department, role, profile_image AS profileImage FROM users WHERE id = ?',
       [userId]
     );
 
@@ -78,13 +78,35 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /api/users/register
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { name, email, password, department, role } = req.body;
+    const { name, email, password, department, role, adminCode } = req.body;
 
     if (!name || !email || !password || !department) {
       return res.status(400).json({ message: 'Name, email, password, and department are required.' });
     }
 
-    const assignedRole = role || 'student';
+    let assignedRole = role || 'student';
+
+    // Check admin code for one-time use
+    if (adminCode) {
+      const [codeRows] = await db.query<RowDataPacket[]>(
+        'SELECT id, is_used FROM admin_codes WHERE code = ? AND used = 1',
+        [adminCode.toUpperCase()]
+      );
+      
+      if (codeRows.length > 0 && codeRows[0].is_used === 1) {
+        return res.status(403).json({ message: 'Admin code has already been used.' });
+      }
+
+      const [validCodeRows] = await db.query<RowDataPacket[]>(
+        'SELECT id FROM admin_codes WHERE code = ? AND used = 0',
+        [adminCode.toUpperCase()]
+      );
+
+      if (validCodeRows.length > 0) {
+        assignedRole = 'admin';
+        await db.query('UPDATE admin_codes SET is_used = 1, used = 1 WHERE code = ?', [adminCode.toUpperCase()]);
+      }
+    }
 
     const [existing] = await db.query<RowDataPacket[]>('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.length > 0) {
@@ -120,7 +142,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     const [rows] = await db.query<RowDataPacket[]>(
-      'SELECT id, name AS fullName, email, password, department, role, created_at AS createdAt FROM users WHERE email = ? AND password = ? LIMIT 1',
+      'SELECT id, name AS fullName, email, password, department, role, profile_image AS profileImage, created_at AS createdAt FROM users WHERE email = ? AND password = ? LIMIT 1',
       [email, password]
     );
 
@@ -143,22 +165,45 @@ router.put('/:id', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid user id.' });
     }
 
-    const { name, email } = req.body as { name?: string; email?: string };
+    const { name, email, profileImage } = req.body as { name?: string; email?: string; profileImage?: string };
 
-    if (!name || !email) {
-      return res.status(400).json({ message: 'Name and email are required.' });
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (name) {
+      updates.push('name = ?');
+      values.push(name);
+    }
+    if (email) {
+      updates.push('email = ?');
+      values.push(email);
+    }
+    if (profileImage !== undefined) {
+      updates.push('profile_image = ?');
+      values.push(profileImage);
     }
 
+    if (updates.length === 0) {
+      return res.status(400).json({ message: 'No fields provided for update.' });
+    }
+
+    values.push(userId);
+
     const [result] = await db.query<ResultSetHeader>(
-      'UPDATE users SET name = ?, email = ? WHERE id = ?',
-      [name, email, userId]
+      `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+      values
     );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    return res.json({ id: userId, name, email });
+    const [updatedRow] = await db.query<RowDataPacket[]>(
+      'SELECT id, name AS fullName, email, department, role, profile_image AS profileImage FROM users WHERE id = ?',
+      [userId]
+    );
+
+    return res.json(updatedRow[0]);
   } catch (error) {
     console.error('Error updating user:', error);
     return res.status(500).json({ message: 'Failed to update user.' });
@@ -199,7 +244,7 @@ router.post('/admin-codes', async (req: Request, res: Response) => {
     let exists = true;
     do {
       code = `ADMIN-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      const [rows] = await db.query<RowDataPacket[]>('SELECT id FROM admin_codes WHERE code = ? AND used = 0', [code]);
+      const [rows] = await db.query<RowDataPacket[]>('SELECT id FROM admin_codes WHERE code = ? AND is_used = FALSE', [code]);
       exists = rows.length > 0;
     } while (exists);
 
@@ -214,7 +259,7 @@ router.post('/admin-codes', async (req: Request, res: Response) => {
 // GET /api/users/admin-codes
 router.get('/admin-codes', async (_req: Request, res: Response) => {
   try {
-    const [rows] = await db.query<RowDataPacket[]>('SELECT code, created_by, created_at FROM admin_codes WHERE used = 0 ORDER BY created_at DESC');
+    const [rows] = await db.query<RowDataPacket[]>('SELECT code, created_by, created_at FROM admin_codes WHERE is_used = FALSE ORDER BY created_at DESC');
     return res.json({ codes: rows });
   } catch (error) {
     console.error('Error fetching admin codes:', error);
@@ -228,16 +273,26 @@ router.post('/reset-tokens', async (req: Request, res: Response) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required.' });
 
+    // Seed demo accounts first so they are always findable
+    await seedUsersIfEmpty();
+
+    // Verify the email belongs to a real account first
+    const [userRows] = await db.query<RowDataPacket[]>('SELECT id FROM users WHERE email = ?', [email]);
+    if (!userRows.length) return res.status(404).json({ message: 'No account found with this email.' });
+
+    // Delete all previous reset tokens for this email so they can always request a new one
+    await db.query('DELETE FROM reset_tokens WHERE email = ?', [email]);
+
     let token: string;
     let exists = true;
     do {
       token = `RESET-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-      const [rows] = await db.query<RowDataPacket[]>('SELECT id FROM reset_tokens WHERE token = ? AND used = 0', [token]);
+      const [rows] = await db.query<RowDataPacket[]>('SELECT id FROM reset_tokens WHERE token = ?', [token]);
       exists = rows.length > 0;
     } while (exists);
 
     await db.query('INSERT INTO reset_tokens (email, token) VALUES (?, ?)', [email, token]);
-    const link = `${req.protocol}://${req.get('host')}/reset-password?token=${token}`;
+    const link = `http://localhost:4200/reset-password?token=${token}`;
     return res.json({ token, link });
   } catch (error) {
     console.error('Error generating reset token:', error);
@@ -251,10 +306,10 @@ router.post('/validate-admin-code', async (req: Request, res: Response) => {
     const { code } = req.body;
     if (!code) return res.status(400).json({ message: 'Code is required.' });
 
-    const [rows] = await db.query<RowDataPacket[]>('SELECT id FROM admin_codes WHERE code = ? AND used = 0', [code.toUpperCase()]);
-    if (!rows.length) return res.status(400).json({ message: 'Invalid or used admin code.' });
+    const [rows] = await db.query<RowDataPacket[]>('SELECT id FROM admin_codes WHERE code = ? AND is_used = FALSE', [code.toUpperCase()]);
+    if (!rows.length) return res.status(403).json({ message: 'Invalid or already used admin code.' });
 
-    await db.query('UPDATE admin_codes SET used = 1 WHERE id = ?', [rows[0].id]);
+    await db.query('UPDATE admin_codes SET is_used = 1, used = 1 WHERE id = ?', [rows[0].id]);
     return res.json({ valid: true });
   } catch (error) {
     console.error('Error validating admin code:', error);
@@ -268,13 +323,42 @@ router.post('/validate-reset-token', async (req: Request, res: Response) => {
     const { token } = req.body;
     if (!token) return res.status(400).json({ message: 'Token is required.' });
 
-    const [rows] = await db.query<RowDataPacket[]>('SELECT email FROM reset_tokens WHERE token = ? AND used = 0', [token]);
-    if (!rows.length) return res.status(400).json({ message: 'Invalid or used reset token.' });
+    const [tokenRows] = await db.query<RowDataPacket[]>('SELECT email FROM reset_tokens WHERE token = ? AND used = 0', [token]);
+    if (!tokenRows.length) return res.status(400).json({ message: 'Invalid or used reset token.' });
 
-    return res.json({ valid: true, email: rows[0].email });
+    const email = tokenRows[0].email;
+
+    const [userRows] = await db.query<RowDataPacket[]>('SELECT id FROM users WHERE email = ?', [email]);
+    if (!userRows.length) return res.status(404).json({ message: 'No account found with this email.' });
+
+    return res.json({ valid: true, email });
   } catch (error) {
     console.error('Error validating reset token:', error);
     return res.status(500).json({ message: 'Failed to validate reset token.' });
+  }
+});
+
+// PUT /api/users/reset-password
+router.put('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ message: 'Token and new password are required.' });
+
+    const [tokenRows] = await db.query<RowDataPacket[]>('SELECT email FROM reset_tokens WHERE token = ? AND used = 0', [token]);
+    if (!tokenRows.length) return res.status(400).json({ message: 'Invalid or used reset token.' });
+
+    const email = tokenRows[0].email;
+
+    const [userRows] = await db.query<RowDataPacket[]>('SELECT id FROM users WHERE email = ?', [email]);
+    if (!userRows.length) return res.status(404).json({ message: 'No account found with this email.' });
+
+    await db.query('UPDATE users SET password = ? WHERE email = ?', [password, email]);
+    await db.query('UPDATE reset_tokens SET used = 1 WHERE token = ?', [token]);
+
+    return res.json({ success: true, message: 'Password updated successfully.' });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    return res.status(500).json({ message: 'Failed to reset password.' });
   }
 });
 

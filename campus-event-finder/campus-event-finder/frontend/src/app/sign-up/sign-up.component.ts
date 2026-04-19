@@ -28,7 +28,12 @@ export class SignUpComponent implements OnInit {
 
   errorMessage = '';
   showSuccessPopup = false;
+  showPassword = false;
   readonly departments = DEPARTMENT_OPTIONS;
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
 
   ngOnInit(): void {
     if (this.authService.isLoggedIn()) {

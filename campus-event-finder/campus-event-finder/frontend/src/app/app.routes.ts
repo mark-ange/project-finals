@@ -13,12 +13,15 @@ import { UserEditComponent } from './components/user-edit/user-edit.component';
 import { adminGuard } from './guards/admin.guard';
 import { authGuard } from './guards/auth.guard';
 import { studentGuard } from './guards/student.guard';
+import { AboutComponent } from './about/about.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
+  { path: 'about', component: AboutComponent },
   { path: 'sign-up', component: SignUpComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'reset-password', component: ForgotPasswordComponent },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'admin-events', component: AdminEventsComponent, canActivate: [adminGuard] },
   { path: 'profile', component: StudentProfileComponent, canActivate: [studentGuard] },

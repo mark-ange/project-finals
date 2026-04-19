@@ -344,7 +344,7 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <h3 class="modal-title">{{ isEditing ? 'Edit Event' : 'Create Event' }}</h3>
 
-      <form (ngSubmit)="submitEditor()" class="editor-form">
+      <form (ngSubmit)="submitEditor()" class="editor-form" (paste)="onImagePaste($event)">
         <label class="field">
           <span class="label">Event title</span>
           <input class="input" [(ngModel)]="formData.title" name="title" />
@@ -462,7 +462,7 @@
       <h3 class="modal-title">Comments</h3>
       <p class="modal-subtitle" *ngIf="commentsEvent">{{ commentsEvent.title }}</p>
 
-      <div class="comments-list" *ngIf="commentsEvent">
+      <div class="comments-list" #commentsContainer *ngIf="commentsEvent">
         <div class="comment" *ngFor="let comment of eventComments; trackBy: trackByCommentId">
           <div class="comment-head">
             <span class="comment-author">{{ comment.author }}</span>

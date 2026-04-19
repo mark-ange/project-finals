@@ -1,10 +1,14 @@
 -- Campus Event Finder Full Schema (Flexible Admin Version)
+SET FOREIGN_KEY_CHECKS = 0;
 
--- Reset tables
+-- Reset all tables (Added missing ones)
+DROP TABLE IF EXISTS comment_likes;
 DROP TABLE IF EXISTS user_likes;
 DROP TABLE IF EXISTS event_registrations;
 DROP TABLE IF EXISTS event_comments;
 DROP TABLE IF EXISTS event_metrics;
+DROP TABLE IF EXISTS admin_codes;
+DROP TABLE IF EXISTS reset_tokens;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS events;
 
@@ -16,8 +20,8 @@ CREATE TABLE IF NOT EXISTS events (
   time VARCHAR(64) NOT NULL,
   image TEXT NULL,               -- Optional
   category VARCHAR(64) NOT NULL,
-  description TEXT NULL,         -- Made Optional (Removed NOT NULL)
-  summary TEXT NULL,             -- Made Optional (Removed NOT NULL)
+  description TEXT NULL,         -- Made Optional
+  summary TEXT NULL,             -- Made Optional
   location VARCHAR(255) NOT NULL,
   organizer VARCHAR(255) NOT NULL,
   department VARCHAR(255) NOT NULL,
@@ -66,7 +70,7 @@ CREATE TABLE IF NOT EXISTS event_comments (
 CREATE TABLE IF NOT EXISTS event_registrations (
   id VARCHAR(50) PRIMARY KEY,
   event_id VARCHAR(32) NOT NULL,
-  user_id VARCHAR(50) NOT NULL,
+  user_id VARCHAR(50) NOT NULL, -- Note: Make sure this matches how your backend generates IDs!
   name VARCHAR(120) NOT NULL,
   email VARCHAR(150) NOT NULL,
   department VARCHAR(120) NOT NULL,
@@ -100,16 +104,16 @@ CREATE TABLE IF NOT EXISTS comment_likes (
     FOREIGN KEY (comment_id) REFERENCES event_comments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 7. Admin Codes Table
+-- 7. Admin Codes Table (One-Time Use)
 CREATE TABLE IF NOT EXISTS admin_codes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   code VARCHAR(50) NOT NULL UNIQUE,
   created_by VARCHAR(150) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  used TINYINT(1) NOT NULL DEFAULT 0
+  used TINYINT(1) NOT NULL DEFAULT 0 -- Removed the redundant ALTER TABLE command
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 7. Reset Tokens Table
+-- 8. Reset Tokens Table
 CREATE TABLE IF NOT EXISTS reset_tokens (
   id INT AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(150) NOT NULL,
@@ -117,3 +121,5 @@ CREATE TABLE IF NOT EXISTS reset_tokens (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   used TINYINT(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET FOREIGN_KEY_CHECKS = 1;

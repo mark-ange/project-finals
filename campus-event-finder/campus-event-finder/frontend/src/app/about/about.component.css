@@ -1,0 +1,333 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;700;800&display=swap');
+
+.about-page {
+  min-height: 100vh;
+  background-color: #f4f5f9;
+  font-family: 'Inter', sans-serif;
+  color: #1a1a2e;
+  padding: 40px 24px 80px;
+}
+
+.about-page.authenticated {
+  padding-top: 100px;
+}
+
+.about-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ─── Header ────────────────────────────────────────────── */
+.about-header {
+  max-width: 1100px;
+  margin: 0 auto 32px;
+}
+
+.back-link {
+  background: none;
+  border: none;
+  color: #8e0000;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s;
+}
+
+.back-link:hover {
+  transform: translateX(-4px);
+}
+
+/* ─── Hero branding ─────────────────────────────────────── */
+.hero-branding {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-bottom: 50px;
+  background: linear-gradient(135deg, #8e0000, #4d0000);
+  padding: 40px 48px;
+  border-radius: 28px;
+  color: #fff;
+  box-shadow: 0 12px 36px rgba(142, 0, 0, 0.15);
+}
+
+.main-logo {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.25));
+}
+
+.title-group h1 {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  color: #ffd400;
+  letter-spacing: -0.5px;
+}
+
+.tagline {
+  margin: 6px 0 0;
+  font-size: 18px;
+  font-weight: 500;
+  opacity: 0.85;
+  letter-spacing: 0.5px;
+}
+
+/* ─── Sections / Cards ──────────────────────────────────── */
+.info-section {
+  margin-bottom: 48px;
+}
+
+.section-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 24px;
+  padding-left: 12px;
+  border-left: 5px solid #8e0000;
+}
+
+.section-card {
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  border: 1px solid #eaeaea;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.primary-card {
+  border-left: 8px solid #ffd400;
+}
+
+.card-content {
+  padding: 32px 40px;
+}
+
+.vmgo-block h3 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #8e0000;
+  font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+}
+
+.vmgo-block p {
+  margin: 0 0 24px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #444;
+  font-weight: 500;
+}
+
+.vmgo-block:last-of-type p {
+  margin-bottom: 0;
+}
+
+.vmgo-block.horizontal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+/* ─── Values Grid ────────────────────────────────────────── */
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.value-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 30px 24px;
+  text-align: center;
+  border: 1px solid #eaeaea;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.value-card:hover {
+  transform: translateY(-5px);
+  background-color: #fcfdfe;
+  border-color: #ffd400;
+}
+
+.value-icon {
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+
+.value-card h4 {
+  margin: 0 0 12px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: 1px;
+}
+
+.value-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #666;
+}
+
+/* ─── Clusters / Contacts Layout ─────────────────────────── */
+.layout-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 32px;
+}
+
+.clusters-list {
+  background: #fff;
+  border-radius: 24px;
+  padding: 32px;
+  border: 1px solid #eaeaea;
+}
+
+.cluster-item {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.cluster-item:last-child {
+  margin-bottom: 0;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  background: #ffd400;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.cluster-item strong {
+  display: block;
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  margin-bottom: 4px;
+  color: #1a1a1a;
+}
+
+.cluster-item p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.contact-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 32px;
+  border: 1px solid #eaeaea;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.contact-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  font-size: 14.5px;
+  color: #444;
+  line-height: 1.5;
+}
+
+.contact-item .icon {
+  font-size: 20px;
+  opacity: 0.7;
+}
+
+.social-links {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px dotted #ccc;
+  font-size: 14px;
+  color: #888;
+}
+
+.social-links a {
+  color: #8e0000;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ─── Dark Mode support ─────────────────────────────────── */
+:host-context(.dark-mode) .about-page {
+  background-color: #1a1b1e;
+  color: #c1c2c5;
+}
+
+:host-context(.dark-mode) .section-card,
+:host-context(.dark-mode) .value-card,
+:host-context(.dark-mode) .clusters-list,
+:host-context(.dark-mode) .contact-card {
+  background-color: #25262b;
+  border-color: #373a40;
+}
+
+:host-context(.dark-mode) .section-title,
+:host-context(.dark-mode) .cluster-item strong,
+:host-context(.dark-mode) .value-card h4 {
+  color: #f8f9fa;
+}
+
+:host-context(.dark-mode) .vmgo-block p,
+:host-context(.dark-mode) .cluster-item p,
+:host-context(.dark-mode) .contact-item {
+  color: #a6a7ab;
+}
+
+:host-context(.dark-mode) .back-link {
+  color: #ffd400;
+}
+
+/* ─── Responsive ────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .layout-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .vmgo-block.horizontal {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .hero-branding {
+    flex-direction: column;
+    text-align: center;
+    padding: 32px 24px;
+  }
+
+  .title-group h1 {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 500px) {
+  .card-content {
+    padding: 24px;
+  }
+
+  .vmgo-block p {
+    font-size: 15px;
+  }
+
+  .about-page {
+    padding: 20px 16px 60px;
+  }
+}

@@ -158,16 +158,22 @@ main {
   max-width: 1200px;
   margin: 0 auto;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 /* ─── Analytics Section ─────────────────────────────────── */
 .analytics-section {
   border-radius: 20px;
-  padding: 24px;
+  padding: 32px 28px;
   background: linear-gradient(135deg, #fff8f0 0%, #f8f9ff 60%, #fff 100%);
   border: 1px solid rgba(142, 0, 0, 0.1);
   box-shadow: 0 8px 32px rgba(44, 20, 20, 0.1);
   margin-bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .analytics-heading h3 {
@@ -200,7 +206,7 @@ main {
   margin-top: 18px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 20px;
 }
 
 .analytics-card,
@@ -211,8 +217,9 @@ main {
   box-shadow: 0 4px 16px rgba(15, 17, 20, 0.07);
 }
 
-.analytics-card {
-  padding: 16px 18px;
+.analytics-card,
+.chart-panel {
+  padding: 22px 24px;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -223,7 +230,7 @@ main {
 
 .analytics-label {
   display: block;
-  font-size: 10px;
+  font-size: 11px;
   font-family: 'Inter', sans-serif;
   font-weight: 700;
   letter-spacing: 1.2px;
@@ -242,23 +249,23 @@ main {
 }
 
 .analytics-card p {
-  margin: 7px 0 0;
-  font-size: 11px;
-  line-height: 1.4;
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
   color: #555;
 }
 
 /* ─── Chart Panels ──────────────────────────────────────── */
 .analytics-grid {
-  margin-top: 14px;
+  margin-top: 20px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px;
 }
 
 .line-chart-panel {
   grid-column: 1 / -1;
-  padding: 22px 20px 18px;
+  padding: 28px 26px 22px;
 }
 
 .line-chart-wrapper {
@@ -525,6 +532,9 @@ main {
 
 .event-body {
   padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .title-row {
@@ -536,7 +546,7 @@ main {
 }
 
 .title-row h4 {
-  margin: 0;
+  margin: 0 0 8px;
   font-family: 'Outfit', sans-serif;
   font-size: 16px;
   font-weight: 700;
@@ -589,6 +599,7 @@ main {
   font-size: 12px;
   line-height: 1.5;
   color: #444;
+  margin-bottom: 10px;
 }
 
 .description strong {
