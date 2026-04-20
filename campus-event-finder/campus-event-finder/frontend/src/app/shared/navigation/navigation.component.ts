@@ -2,6 +2,7 @@ import { NgIf } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-navigation',
@@ -13,6 +14,7 @@ import { AuthService, User } from '../../services/auth.service';
 export class NavigationComponent {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly notificationService = inject(NotificationService);
 
   currentUser: User | null = null;
   menuOpen = false;
@@ -21,6 +23,10 @@ export class NavigationComponent {
 
   constructor() {
     this.currentUser = this.authService.getCurrentUser();
+  }
+
+  get hasUnreadNotifications(): boolean {
+    return this.notificationService.getUnreadCount() > 0;
   }
 
   toggleMenu(): void {

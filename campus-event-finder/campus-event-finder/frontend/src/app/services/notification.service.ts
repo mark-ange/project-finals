@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { AuthService, User } from './auth.service';
+import { HttpClient } from '@angular/common/http';
 
-export type NotificationCategory = 'event' | 'registration' | 'comment' | 'attendance' | 'system';
+export type NotificationCategory = 'event' | 'registration' | 'comment' | 'attendance' | 'system' | 'security';
 
 export interface AppNotification {
   id: string;
@@ -28,15 +29,36 @@ interface NotificationDraft {
 export class NotificationService {
   private readonly storageKey = 'appNotifications';
   private readonly authService = inject(AuthService);
+  private readonly http = inject(HttpClient);
   private readonly notificationsSubject = new BehaviorSubject<AppNotification[]>([]);
 
   readonly notifications$ = this.notificationsSubject.asObservable();
 
   constructor() {
+    // Force a one-time clear of old notifications to trigger the new intelligent seeding
+    if (!localStorage.getItem('notif_v2_sync')) {
+      localStorage.removeItem(this.storageKey);
+      localStorage.setItem('notif_v2_sync', 'done');
+    }
+
     this.seedInitialNotifications();
     this.refreshCurrentUserNotifications();
     this.authService.currentUser$.subscribe(user => {
-      this.seedNotificationsForUser(user);
+      if (user) {
+        // Clear old mock seeding to force fresh data with names/times
+        const all = this.loadAllNotifications();
+        if (!all.some(n => n.title === 'System: Activity Sync')) {
+          this.refreshSystemActivity(user);
+          this.seedNotificationsFromDatabase(user);
+          
+          // Add a marker so we don't spam every refresh
+          this.notifyUser(user, {
+            title: 'System: Activity Sync',
+            message: 'Your notification center has been updated with the latest engagement metrics and security logs.',
+            category: 'system'
+          });
+        }
+      }
       this.refreshCurrentUserNotifications();
     });
   }
@@ -124,116 +146,125 @@ export class NotificationService {
   }
 
   private seedInitialNotifications(): void {
+    // Initial welcome for all new browsers
     const existing = this.loadAllNotifications();
     if (existing.length > 0) return;
 
-    this.authService.getAllUsers().subscribe(users => {
-      if (!users.length) return;
+    this.authService.currentUser$.subscribe(user => {
+      if (user) this.seedNotificationsFromDatabase(user);
+    });
+  }
 
-      const now = Date.now();
-      const buildNotification = (
-        user: User,
-        title: string,
-        message: string,
-        category: NotificationCategory,
-        minutesAgo: number,
-        route: string
-      ): AppNotification => ({
-        id: this.generateId(),
-        recipientUserId: user.id,
-        title,
-        message,
-        category,
-        createdAt: new Date(now - minutesAgo * 60 * 1000).toISOString(),
-        read: minutesAgo > 60,
-        route
+  private seedNotificationsFromDatabase(user: User | null | undefined): void {
+    if (!user) return;
+
+    // Avoid double seeding
+    const existing = this.loadAllNotifications();
+    const hasAlreadySeeded = existing.some(n => n.category === 'comment' || n.category === 'registration');
+    if (hasAlreadySeeded) return;
+
+    // Fetch all users to generate department-specific activity
+    this.authService.getAllUsers().subscribe((allUsers: User[]) => {
+      const departmentAdmins = allUsers.filter(u => u.role === 'admin' && u.department === user.department);
+      
+      this.http.get<any[]>('http://localhost:5000/api/events').subscribe((events: any[]) => {
+        const notifications: AppNotification[] = [];
+        
+        // Welcome notification
+        notifications.push({
+          id: this.generateId(),
+          recipientUserId: user.id,
+          title: 'Welcome to the Notification Center',
+          message: 'Stay updated with event activity and system logs here.',
+          category: 'system',
+          createdAt: new Date().toISOString(),
+          read: false,
+          route: '/notifications'
+        });
+
+        // 1. Process Event Comments for Notifications (Who and When)
+        events.forEach((event: any) => {
+          // Students see activity in their department; Admins/Main Admin see their respective scopes
+          const isRelevant = user.role === 'main-admin' || event.department === user.department;
+          
+          if (isRelevant) {
+            this.http.get<any[]>(`http://localhost:5000/api/events/${event.id}/comments`).subscribe((comments: any[]) => {
+              const newNotifs = comments.slice(0, 5).map((comment: any) => ({
+                id: this.generateId(),
+                recipientUserId: user.id,
+                title: 'New Event Comment',
+                message: `${comment.author} (${comment.role}) commented on "${event.title}": "${comment.text.substring(0, 40)}${comment.text.length > 40 ? '...' : ''}"`,
+                category: 'comment' as NotificationCategory,
+                createdAt: comment.createdAt,
+                read: true,
+                route: user.role === 'student' ? '/dashboard' : '/admin-events'
+              }));
+              this.saveAllNotifications([...newNotifs, ...this.loadAllNotifications()].slice(0, 500));
+            });
+
+            this.http.get<any[]>(`http://localhost:5000/api/events/${event.id}/registrations`).subscribe((regs: any[]) => {
+              const newNotifs = regs.slice(0, 3).map((reg: any) => ({
+                id: this.generateId(),
+                recipientUserId: user.id,
+                title: 'New Registration',
+                message: `${reg.name} from ${reg.department} registered for "${event.title}".`,
+                category: 'registration' as NotificationCategory,
+                createdAt: reg.registeredAt,
+                read: true,
+                route: user.role === 'student' ? '/dashboard' : '/admin-events'
+              }));
+              this.saveAllNotifications([...newNotifs, ...this.loadAllNotifications()].slice(0, 500));
+            });
+          }
+        });
+      });
+    });
+  }
+
+  private refreshSystemActivity(user: User | null | undefined): void {
+    if (!user || user.role !== 'main-admin') return;
+
+    this.http.get<any>('http://localhost:5000/api/users/system-activity').subscribe((activity: any) => {
+      const existing = this.loadAllNotifications();
+      const newNotifs: AppNotification[] = [];
+
+      // Process Admin Code Usage
+      activity.adminCodeUsage.forEach((usage: any) => {
+        const msg = `Admin Code ${usage.code} was used to register a new administrator.`;
+        if (!existing.some(n => n.message === msg)) {
+          newNotifs.push({
+            id: this.generateId(),
+            recipientUserId: user.id,
+            title: 'Admin Code Used',
+            message: msg,
+            category: 'system',
+            createdAt: usage.created_at,
+            read: false,
+            route: '/users'
+          });
+        }
       });
 
-      const notifications: AppNotification[] = [];
-      const admins = users.filter(user => user.role === 'admin' || user.role === 'main-admin');
-      const students = users.filter(user => user.role === 'student').slice(0, 8);
-      const systemUser = users.find(user => user.role === 'main-admin');
+      // Process Password Resets
+      activity.passwordResets.forEach((reset: any) => {
+        const msg = `Password reset requested for account: ${reset.email}. Status: ${reset.used ? 'Completed' : 'Pending'}`;
+        if (!existing.some(n => n.message === msg)) {
+          newNotifs.push({
+            id: this.generateId(),
+            recipientUserId: user.id,
+            title: 'Security: Password Reset',
+            message: msg,
+            category: 'system',
+            createdAt: reset.created_at,
+            read: false,
+            route: '/users'
+          });
+        }
+      });
 
-      if (systemUser) {
-        notifications.push(
-          buildNotification(
-            systemUser,
-            'Platform analytics are live',
-            'Your admin dashboard now shows real-time engagement, attendance, and registration analytics.',
-            'system',
-            5,
-            '/notifications'
-          ),
-          buildNotification(
-            systemUser,
-            'New event synchronization',
-            'All department events have been synced successfully with the hub.',
-            'system',
-            18,
-            '/notifications'
-          ),
-          buildNotification(
-            systemUser,
-            'User activity report available',
-            'Open the notifications panel to review recent registration and attendance activity.',
-            'system',
-            35,
-            '/notifications'
-          )
-        );
+      if (newNotifs.length > 0) {
+        this.saveAllNotifications([...newNotifs, ...existing].slice(0, 500));
       }
-
-      admins.slice(0, 6).forEach((admin, index) => {
-        notifications.push(
-          buildNotification(
-            admin,
-            'New registration received',
-            `A student has registered for the latest department event.`,
-            'registration',
-            10 + index * 8,
-            '/notifications'
-          ),
-          buildNotification(
-            admin,
-            'New comment on your event',
-            `A student commented on the event announcement. Check the admin panel for details.`,
-            'comment',
-            22 + index * 6,
-            '/notifications'
-          ),
-          buildNotification(
-            admin,
-            'Attendance updated',
-            `Attendance records were updated for your department's active event.`,
-            'attendance',
-            40 + index * 5,
-            '/notifications'
-          )
-        );
-      });
-
-      students.forEach((student, index) => {
-        notifications.push(
-          buildNotification(
-            student,
-            'Event registration confirmed',
-            'You are now registered for the upcoming campus event. View details in your dashboard.',
-            'event',
-            12 + index * 4,
-            '/dashboard'
-          ),
-          buildNotification(
-            student,
-            'Comment reply received',
-            'An event organizer replied to your comment. Open the event page to read it.',
-            'comment',
-            50 + index * 3,
-            '/notifications'
-          )
-        );
-      });
-
-      this.saveAllNotifications(notifications);
     });
   }
 

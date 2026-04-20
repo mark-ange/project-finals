@@ -31,7 +31,9 @@ export class UserCreateComponent {
 
     this.userService.createUser({
       name: this.name.trim(),
-      email: this.email.trim()
+      email: this.email.trim(),
+      department: 'Main Administration', // Default for administrative creation
+      role: 'admin'
     }).subscribe({
       next: () => {
         this.saving = false;

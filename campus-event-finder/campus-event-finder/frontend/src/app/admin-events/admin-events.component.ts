@@ -241,6 +241,11 @@ export class AdminEventsComponent implements OnInit {
     }
   }
 
+  navigateToUsers(): void {
+    console.log('Navigating to user directory...');
+    this.router.navigate(['/users']);
+  }
+
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.events.length / this.pageSize));
   }

@@ -13,7 +13,7 @@ export class UserService {
   constructor(private readonly http: HttpClient) {}
 
   getUsers(): Observable<User[]> {
-    return this.http.get<User[]>(this.apiUrl);
+    return this.http.get<User[]>(`${this.apiUrl}?includePasswords=true`);
   }
 
   getUser(id: number): Observable<User> {
@@ -30,5 +30,9 @@ export class UserService {
 
   deleteUser(id: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
+  }
+
+  updatePassword(id: number, password: string): Observable<{ success: boolean; message: string }> {
+    return this.http.put<{ success: boolean; message: string }>(`${this.apiUrl}/${id}/password`, { password });
   }
 }

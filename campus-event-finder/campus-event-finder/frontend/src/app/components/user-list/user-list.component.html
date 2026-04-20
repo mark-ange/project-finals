@@ -1,54 +1,87 @@
-<section class="user-page">
+<app-navigation></app-navigation>
+
+<div class="user-page">
   <header class="user-header">
-    <div>
-      <h2>Users</h2>
-      <p class="subtitle">Manage users stored in the MySQL database.</p>
+    <div class="header-main">
+      <h1>Security & Users</h1>
+      <p class="subtitle">Platform Access Management & Verified Accounts</p>
     </div>
-    <a class="btn primary" routerLink="/users/new">Add User</a>
+    
+    <div class="directory-controls">
+      <div class="role-filters">
+        <button [class.active]="currentFilter === 'all'" (click)="setFilter('all')">All</button>
+        <button [class.active]="currentFilter === 'student'" (click)="setFilter('student')">Students</button>
+        <button [class.active]="currentFilter === 'admin'" (click)="setFilter('admin')">Admins</button>
+      </div>
+    </div>
   </header>
 
-  <div *ngIf="loading" class="status">Loading users...</div>
-  <div *ngIf="errorMessage" class="status error">{{ errorMessage }}</div>
-  <div *ngIf="resetMessage" class="status" [class.error]="resetMessageType === 'error'" [class.success]="resetMessageType === 'success'">
-    {{ resetMessage }}
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-sphere">
+    <p>Synchronizing directory...</p>
   </div>
 
-  <table *ngIf="!loading && users.length" class="user-table">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th class="actions">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let user of users; trackBy: trackByUserId">
-        <td>{{ user.id }}</td>
-        <td>{{ user.name }}</td>
-        <td>{{ user.email }}</td>
-        <td class="actions">
-          <a class="btn" [routerLink]="['/users', user.id, 'edit']">Edit</a>
-          <button
-            *ngIf="authService.isMainAdmin()"
-            class="btn secondary"
-            type="button"
-            (click)="sendResetLink(user)"
-          >
-            Send reset link
-          </button>
-          <ng-container *ngIf="pendingDeleteUserId !== user.id; else userDeleteConfirm">
-            <button class="btn danger" type="button" (click)="requestDeleteUser(user)">Delete</button>
-          </ng-container>
-          <ng-template #userDeleteConfirm>
-            <span class="delete-prompt">Delete {{ user.name }}?</span>
-            <button class="btn danger" type="button" (click)="confirmDeleteUser(user)">Yes</button>
-            <button class="btn" type="button" (click)="cancelDelete()">Cancel</button>
-          </ng-template>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <!-- User Grid -->
+  <div class="user-grid" *ngIf="!loading && users.length">
+    <div class="user-card" *ngFor="let user of users; trackBy: trackByUserId">
+      <div class="card-top">
+        <div class="avatar-sphere">
+          {{ user.fullName ? user.fullName[0] : (user.name ? user.name[0] : 'U') }}
+        </div>
+        <div class="info-content">
+          <h3>{{ user.fullName || user.name }}</h3>
+          <span class="user-role-badge" [ngClass]="'role-' + user.role">
+            {{ user.role }}
+          </span>
+        </div>
+      </div>
 
-  <p *ngIf="!loading && !users.length" class="status">No users yet. Add one to get started.</p>
-</section>
+      <div class="card-details">
+        <div class="detail-row">
+          <span class="detail-icon">📧</span>
+          {{ user.email }}
+        </div>
+        <div class="detail-row">
+          <span class="detail-icon">🏢</span>
+          {{ user.department }}
+        </div>
+        <div class="detail-row password-row">
+          <span class="detail-icon">🔑</span>
+          <span class="pass-text">{{ isPasswordVisible(user.id) ? user.password : '••••••••' }}</span>
+          <button class="pass-toggle" (click)="togglePassword(user.id)" type="button">
+            {{ isPasswordVisible(user.id) ? '🙈' : '👁️' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-mini edit" [routerLink]="['/users/edit', user.id]">
+          Modify
+        </button>
+        
+        <div *ngIf="pendingDeleteUserId === user.id" class="delete-overlay">
+          <button class="btn-mini danger" (click)="confirmDeleteUser(user)">Confirm</button>
+          <button class="btn-mini edit" (click)="cancelDelete()">Cancel</button>
+        </div>
+        
+        <button *ngIf="pendingDeleteUserId !== user.id" 
+                class="btn-mini danger" 
+                (click)="requestDeleteUser(user)">
+          Revoke
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && !users.length" class="empty-state">
+     <p>No verified accounts found in local directory.</p>
+  </div>
+
+  <!-- Toasts -->
+  <div class="status-toast" *ngIf="errorMessage">
+    ⚠️ {{ errorMessage }}
+  </div>
+  <div class="status-toast" *ngIf="resetMessage">
+    ✅ {{ resetMessage }}
+  </div>
+</div>

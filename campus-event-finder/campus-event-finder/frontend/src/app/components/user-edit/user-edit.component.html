@@ -1,28 +1,68 @@
-<section class="form-page">
-  <div class="form-card">
-    <h2>Edit User</h2>
-    <p class="subtitle">Update the selected user record.</p>
+<section class="edit-page">
+  <div class="glass-card">
+    <header class="edit-header">
+      <p class="eyebrow">User Directory</p>
+      <h2>Edit User Profile</h2>
+      <p class="subtitle">Modify account details and security credentials for <strong>{{ email }}</strong>.</p>
+    </header>
 
-    <div *ngIf="loading" class="status">Loading user details...</div>
+    <div class="divider"></div>
 
-    <form *ngIf="!loading" (ngSubmit)="save()" #userForm="ngForm">
-      <label>
-        Full Name
-        <input name="name" type="text" [(ngModel)]="name" required />
-      </label>
+    <div *ngIf="loading" class="status-msg info">
+      <div class="spinner"></div> Loading account data...
+    </div>
 
-      <label>
-        Email
-        <input name="email" type="email" [(ngModel)]="email" required />
-      </label>
+    <form *ngIf="!loading" (ngSubmit)="save()" #userForm="ngForm" class="edit-form">
+      <div class="input-group">
+        <label for="edit-name">Full Name</label>
+        <div class="input-wrapper">
+          <span class="input-icon">👤</span>
+          <input id="edit-name" name="name" type="text" [(ngModel)]="name" required placeholder="User's full name" />
+        </div>
+      </div>
 
-      <div *ngIf="errorMessage" class="status error">{{ errorMessage }}</div>
+      <div class="input-group">
+        <label for="edit-email">Email Address</label>
+        <div class="input-wrapper">
+          <span class="input-icon">✉️</span>
+          <input id="edit-email" name="email" type="email" [(ngModel)]="email" required placeholder="name@liceo.edu.ph" />
+        </div>
+      </div>
+
+      <div class="security-section">
+        <div class="section-badge">SECURITY</div>
+        <div class="input-group">
+          <label for="edit-password">Password (Audit/Override)</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔑</span>
+            <input 
+              id="edit-password" 
+              name="password" 
+              [type]="showPassword ? 'text' : 'password'" 
+              [(ngModel)]="password" 
+              placeholder="View or set new password" 
+            />
+            <button type="button" class="visibility-toggle" (click)="showPassword = !showPassword">
+              {{ showPassword ? '🙈' : '👁️' }}
+            </button>
+          </div>
+          <p class="input-hint">Admins can audit current passwords or provide a new one to override.</p>
+        </div>
+      </div>
+
+      <div *ngIf="errorMessage" class="status-msg error">
+        <span class="icon">⚠️</span> {{ errorMessage }}
+      </div>
+      
+      <div *ngIf="successMessage" class="status-msg success">
+        <span class="icon">✅</span> {{ successMessage }}
+      </div>
 
       <div class="actions">
-        <button class="btn primary" type="submit" [disabled]="saving || userForm.invalid">
-          {{ saving ? 'Saving...' : 'Update User' }}
+        <button class="btn-primary" type="submit" [disabled]="saving || userForm.invalid">
+          {{ saving ? 'Saving Changes...' : 'Save User Details' }}
         </button>
-        <a class="btn" routerLink="/users">Cancel</a>
+        <a class="btn-ghost" routerLink="/users">Cancel and Return</a>
       </div>
     </form>
   </div>

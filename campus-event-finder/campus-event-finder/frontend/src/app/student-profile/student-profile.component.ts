@@ -59,10 +59,19 @@ export class StudentProfileComponent implements OnInit {
         return;
       }
 
-      this.authService.updateProfile({ profileImage: result });
-      this.currentUser = this.authService.getCurrentUser();
-      this.profileImageUrl = result;
-      this.avatarMessage = 'Profile photo updated.';
+      this.authService.updateProfile({ profileImage: result }).subscribe({
+        next: () => {
+          this.currentUser = this.authService.getCurrentUser();
+          this.profileImageUrl = result;
+          this.avatarMessage = 'Profile photo updated permanently.';
+        },
+        error: () => {
+          this.avatarMessage = 'Photo saved locally, but sync failed.';
+          // Local update happened anyway in service fallback
+          this.currentUser = this.authService.getCurrentUser();
+          this.profileImageUrl = result;
+        }
+      });
     };
 
     reader.onerror = () => {

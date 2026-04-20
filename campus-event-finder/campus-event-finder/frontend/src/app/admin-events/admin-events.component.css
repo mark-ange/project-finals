@@ -123,6 +123,23 @@
   background: #ffea6d;
 }
 
+.generate-code-button.secondary {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.generate-code-button.secondary:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.header-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  margin: 18px 0;
+}
+
 .admin-code-result {
   margin-top: 14px;
   display: flex;

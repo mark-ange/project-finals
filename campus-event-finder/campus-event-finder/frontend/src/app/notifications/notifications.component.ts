@@ -3,7 +3,7 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { NavigationComponent } from '../shared/navigation/navigation.component';
-import { AppNotification, NotificationService } from '../services/notification.service';
+import { AppNotification, NotificationCategory, NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-notifications',
@@ -59,12 +59,14 @@ export class NotificationsComponent {
     return notification.id;
   }
 
-  getCategoryLabel(category: AppNotification['category']): string {
-    if (category === 'registration') return 'Registration';
-    if (category === 'comment') return 'Comment';
-    if (category === 'attendance') return 'Attendance';
-    if (category === 'system') return 'System';
-    return 'Event';
+  getCategoryLabel(category: NotificationCategory): string {
+    const type = category as any;
+    if (type === 'registration') return '🎟️ Registration';
+    if (type === 'comment') return '💬 Comment';
+    if (type === 'attendance') return '✅ Attendance';
+    if (type === 'system') return '⚙️ System';
+    if (type === 'security') return '🛡️ Security';
+    return '📅 Event';
   }
 
   selectedNotification: AppNotification | null = null;

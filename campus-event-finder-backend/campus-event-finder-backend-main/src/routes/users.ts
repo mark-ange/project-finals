@@ -38,40 +38,22 @@ async function seedUsersIfEmpty(): Promise<void> {
 }
 
 // GET /api/users
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
+    const includePasswords = req.query['includePasswords'] === 'true';
     await seedUsersIfEmpty();
+    
+    const fields = includePasswords 
+      ? 'id, name AS fullName, email, password, department, role, profile_image AS profileImage'
+      : 'id, name AS fullName, email, department, role, profile_image AS profileImage';
+
     const [rows] = await db.query<RowDataPacket[]>(
-      'SELECT id, name AS fullName, email, department, role, profile_image AS profileImage FROM users ORDER BY id DESC'
+      `SELECT ${fields} FROM users ORDER BY id DESC`
     );
     return res.json(rows);
   } catch (error) {
     console.error('Error fetching users:', error);
     return res.status(500).json({ message: 'Failed to fetch users.' });
-  }
-});
-
-// GET /api/users/:id
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const userId = Number(req.params.id);
-    if (Number.isNaN(userId)) {
-      return res.status(400).json({ message: 'Invalid user id.' });
-    }
-
-    const [rows] = await db.query<RowDataPacket[]>(
-      'SELECT id, name AS fullName, email, department, role, profile_image AS profileImage FROM users WHERE id = ?',
-      [userId]
-    );
-
-    if (!rows.length) {
-      return res.status(404).json({ message: 'User not found.' });
-    }
-
-    return res.json(rows[0]);
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    return res.status(500).json({ message: 'Failed to fetch user.' });
   }
 });
 
@@ -131,6 +113,45 @@ router.post('/register', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/users (Administrative creation)
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    const { name, email, department, role, password } = req.body;
+
+    if (!name || !email || !department) {
+      return res.status(400).json({ message: 'Name, email, and department are required.' });
+    }
+
+    // Default password for administrative creation if not specified
+    const assignedPassword = password || 'Liceo123';
+    const assignedRole = role || 'student';
+
+    const [existing] = await db.query<RowDataPacket[]>('SELECT id FROM users WHERE email = ?', [email]);
+    if (existing.length > 0) {
+      return res.status(409).json({ message: 'Email is already registered.' });
+    }
+
+    const [result] = await db.query<ResultSetHeader>(
+      'INSERT INTO users (name, email, password, department, role) VALUES (?, ?, ?, ?, ?)',
+      [name, email, assignedPassword, department, assignedRole]
+    );
+
+    return res.status(201).json({
+      id: result.insertId,
+      name,
+      email,
+      department,
+      role: assignedRole
+    });
+  } catch (error) {
+    console.error('Error creating user administratively:', error);
+    return res.status(500).json({ message: 'Failed to create user.' });
+  }
+});
+
+
+
+
 // POST /api/users/login
 router.post('/login', async (req: Request, res: Response) => {
   try {
@@ -154,59 +175,6 @@ router.post('/login', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error logging in:', error);
     return res.status(500).json({ message: 'Failed to log in.' });
-  }
-});
-
-// PUT /api/users/:id
-router.put('/:id', async (req: Request, res: Response) => {
-  try {
-    const userId = Number(req.params.id);
-    if (Number.isNaN(userId)) {
-      return res.status(400).json({ message: 'Invalid user id.' });
-    }
-
-    const { name, email, profileImage } = req.body as { name?: string; email?: string; profileImage?: string };
-
-    const updates: string[] = [];
-    const values: any[] = [];
-
-    if (name) {
-      updates.push('name = ?');
-      values.push(name);
-    }
-    if (email) {
-      updates.push('email = ?');
-      values.push(email);
-    }
-    if (profileImage !== undefined) {
-      updates.push('profile_image = ?');
-      values.push(profileImage);
-    }
-
-    if (updates.length === 0) {
-      return res.status(400).json({ message: 'No fields provided for update.' });
-    }
-
-    values.push(userId);
-
-    const [result] = await db.query<ResultSetHeader>(
-      `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
-      values
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'User not found.' });
-    }
-
-    const [updatedRow] = await db.query<RowDataPacket[]>(
-      'SELECT id, name AS fullName, email, department, role, profile_image AS profileImage FROM users WHERE id = ?',
-      [userId]
-    );
-
-    return res.json(updatedRow[0]);
-  } catch (error) {
-    console.error('Error updating user:', error);
-    return res.status(500).json({ message: 'Failed to update user.' });
   }
 });
 
@@ -359,6 +327,146 @@ router.put('/reset-password', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error resetting password:', error);
     return res.status(500).json({ message: 'Failed to reset password.' });
+  }
+});
+
+// PUT /api/users/:id/password (Administrative override)
+router.put('/:id/password', async (req: Request, res: Response) => {
+  try {
+    const userId = Number(req.params.id);
+    const { password } = req.body;
+
+    if (!password) return res.status(400).json({ message: 'New password is required.' });
+
+    const [result] = await db.query<ResultSetHeader>(
+      'UPDATE users SET password = ? WHERE id = ?',
+      [password, userId]
+    );
+
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'User not found.' });
+    return res.json({ success: true, message: 'Password updated by administrator.' });
+  } catch (error) {
+    console.error('Error overriding password:', error);
+    return res.status(500).json({ message: 'Failed to update user password.' });
+  }
+});
+
+// GET /api/users/system-activity (Main Admin logs)
+router.get('/system-activity', async (_req: Request, res: Response) => {
+  try {
+    // 1. Get Admin Code Usage
+    const [codeRows] = await db.query<RowDataPacket[]>(
+      'SELECT code, created_by, created_at, is_used FROM admin_codes WHERE is_used = 1 OR used = 1 ORDER BY created_at DESC'
+    );
+    
+    // 2. Get Password Reset Requests
+    const [resetRows] = await db.query<RowDataPacket[]>(
+      'SELECT email, created_at, used FROM reset_tokens ORDER BY created_at DESC'
+    );
+
+    return res.json({
+      adminCodeUsage: codeRows,
+      passwordResets: resetRows
+    });
+  } catch (error) {
+    console.error('Error fetching system activity:', error);
+    return res.status(500).json({ message: 'Failed to fetch system activity.' });
+  }
+});
+
+// GET /api/users/:id
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const userId = Number(req.params.id);
+    if (Number.isNaN(userId)) {
+      return res.status(400).json({ message: 'Invalid user id.' });
+    }
+
+    const [rows] = await db.query<RowDataPacket[]>(
+      'SELECT id, name AS fullName, email, password, department, role, profile_image AS profileImage FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    return res.json(rows[0]);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    return res.status(500).json({ message: 'Failed to fetch user.' });
+  }
+});
+
+// PUT /api/users/:id
+router.put('/:id', async (req: Request, res: Response) => {
+  try {
+    const userId = Number(req.params.id);
+    if (Number.isNaN(userId)) {
+      return res.status(400).json({ message: 'Invalid user id.' });
+    }
+
+    const { name, email, profileImage, password, department, role } = req.body as { 
+      name?: string; 
+      email?: string; 
+      profileImage?: string;
+      password?: string;
+      department?: string;
+      role?: string;
+    };
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (name) {
+      updates.push('name = ?');
+      values.push(name);
+    }
+    if (email) {
+      updates.push('email = ?');
+      values.push(email);
+    }
+    if (profileImage !== undefined) {
+      updates.push('profile_image = ?');
+      values.push(profileImage);
+    }
+    if (password) {
+      updates.push('password = ?');
+      values.push(password);
+    }
+    if (department) {
+      updates.push('department = ?');
+      values.push(department);
+    }
+    if (role) {
+      updates.push('role = ?');
+      values.push(role);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ message: 'No fields provided for update.' });
+    }
+
+    values.push(userId);
+
+    const [result] = await db.query<ResultSetHeader>(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+      values
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const [updatedRow] = await db.query<RowDataPacket[]>(
+      'SELECT id, name AS fullName, email, department, role, profile_image AS profileImage FROM users WHERE id = ?',
+      [userId]
+    );
+
+    return res.json(updatedRow[0]);
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return res.status(500).json({ message: 'Failed to update user.' });
   }
 });
 

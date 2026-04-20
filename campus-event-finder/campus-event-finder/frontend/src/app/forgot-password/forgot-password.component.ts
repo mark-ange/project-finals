@@ -71,11 +71,13 @@ export class ForgotPasswordComponent implements OnInit {
         this.message = 'Account verified! Your reset link is ready below.';
       },
       error: (err) => {
-        // Handle the "No account found" case
+        // Use backend message if available, otherwise fallback to defaults
+        const backendMessage = err.error?.message;
+        
         if (err.status === 404) {
-          alert('Access Denied: No account associated with this email.');
+          this.message = backendMessage || 'Access Denied: No account associated with this email.';
         } else {
-          alert('Server error. Please try again later.');
+          this.message = backendMessage || 'Server error. Please try again later.';
         }
       }
     });

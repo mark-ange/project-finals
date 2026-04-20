@@ -19,9 +19,14 @@ export class UserEditComponent implements OnInit {
   userId = 0;
   name = '';
   email = '';
+  password = '';
   loading = false;
   saving = false;
+  department = '';
+  role: 'student' | 'admin' | 'main-admin' = 'student';
+  showPassword = false;
   errorMessage = '';
+  successMessage = '';
 
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
@@ -43,6 +48,9 @@ export class UserEditComponent implements OnInit {
       next: user => {
         this.name = user.name;
         this.email = user.email;
+        this.department = user.department;
+        this.role = user.role;
+        this.password = user.password || '';
         this.loading = false;
       },
       error: () => {
@@ -60,17 +68,37 @@ export class UserEditComponent implements OnInit {
 
     this.saving = true;
     this.errorMessage = '';
+    this.successMessage = '';
 
+    // Update basic info
     this.userService.updateUser(this.userId, {
       name: this.name.trim(),
-      email: this.email.trim()
+      email: this.email.trim(),
+      department: this.department,
+      role: this.role
     }).subscribe({
       next: () => {
-        this.saving = false;
-        this.router.navigate(['/users']);
+        // If password was also provided, update it too
+        if (this.password.trim()) {
+          this.userService.updatePassword(this.userId, this.password.trim()).subscribe({
+            next: () => {
+              this.saving = false;
+              this.successMessage = 'User and security credentials updated.';
+              setTimeout(() => this.router.navigate(['/users']), 1500);
+            },
+            error: () => {
+              this.errorMessage = 'Profile updated, but password change failed.';
+              this.saving = false;
+            }
+          });
+        } else {
+          this.saving = false;
+          this.successMessage = 'User profile updated successfully.';
+          setTimeout(() => this.router.navigate(['/users']), 1500);
+        }
       },
       error: () => {
-        this.errorMessage = 'Unable to update the user.';
+        this.errorMessage = 'Unable to update the user profile.';
         this.saving = false;
       }
     });

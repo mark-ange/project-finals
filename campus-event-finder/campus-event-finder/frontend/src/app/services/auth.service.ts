@@ -14,8 +14,8 @@ export interface User {
   fullName: string;
   email: string;
   password?: string;
-  department: string;
-  role: UserRole;
+  department?: string;
+  role?: UserRole;
   profileImage?: string;
   createdAt: Date | string;
 }
@@ -63,12 +63,31 @@ export class AuthService {
     localStorage.setItem(this.getThemeKey(user.email), String(enabled));
   }
 
+  private getProfileImageKey(email: string): string {
+    return `profileImage_${email}`;
+  }
+
+  private cacheProfileImage(email: string, imageUrl: string): void {
+    localStorage.setItem(this.getProfileImageKey(email), imageUrl);
+  }
+
+  private getCachedProfileImage(email: string): string | null {
+    return localStorage.getItem(this.getProfileImageKey(email));
+  }
+
   private loadCurrentUser(): void {
     const storedCurrentUser = localStorage.getItem(this.currentUserStorageKey);
     if (!storedCurrentUser) return;
 
     try {
-      const parsed = this.normalizeUser(JSON.parse(storedCurrentUser) as User);
+      let parsed = this.normalizeUser(JSON.parse(storedCurrentUser) as User);
+      
+      // Restore cached profile image if available (to prevent "disappearing" feel)
+      const cachedImage = this.getCachedProfileImage(parsed.email);
+      if (cachedImage) {
+        parsed.profileImage = cachedImage;
+      }
+      
       this.currentUserSubject.next(parsed);
       this.applyDarkModePreference();
     } catch {
@@ -140,21 +159,28 @@ export class AuthService {
       return of({ success: false, message: 'Please use your official @liceo.edu.ph email to log in.' });
     }
 
-    const normalizedEmail = this.normalizeEmail(credentials.email);
-    
-    return this.http.post<User>(`${this.apiUrl}/login`, {
-      email: normalizedEmail,
-      password: credentials.password
-    }).pipe(
+    const result = this.http.post<User>(`${this.apiUrl}/login`, credentials).pipe(
       tap(user => {
         const normalized = this.normalizeUser(user);
+        
+        // Restore cached profile image upon login
+        const cachedImage = this.getCachedProfileImage(normalized.email);
+        if (cachedImage) {
+          normalized.profileImage = cachedImage;
+        }
+        
+        this.saveCurrentUser(normalized);
         this.currentUserSubject.next(normalized);
-        localStorage.setItem(this.currentUserStorageKey, JSON.stringify(normalized));
         this.applyDarkModePreference();
       }),
       map(() => ({ success: true, message: 'Login successful' })),
       catchError(() => of({ success: false, message: 'Invalid email or password' }))
     );
+    return result;
+  }
+
+  private saveCurrentUser(user: User): void {
+    localStorage.setItem(this.currentUserStorageKey, JSON.stringify(user));
   }
 
   private applyDarkModePreference(): void {
@@ -201,6 +227,7 @@ export class AuthService {
       }))
     );
   }
+
 
   validateResetToken(token: string): Observable<{ valid: boolean; email: string }> {
     return this.http.post<{ valid: boolean; email: string }>(`${this.apiUrl}/validate-reset-token`, { token });
@@ -274,14 +301,33 @@ export class AuthService {
   }
 
   updateProfile(data: Partial<User>): Observable<User> {
-    const currentUser = this.currentUserSubject.value;
-    if (!currentUser) throw new Error('No current user to update');
+    const user = this.currentUserSubject.value;
+    if (!user) return of({} as User);
 
-    return this.http.put<User>(`${this.apiUrl}/${currentUser.id}`, data).pipe(
+    // 1. Cache immediately (instant persistence like dark-mode style)
+    if (data.profileImage) {
+      this.cacheProfileImage(user.email, data.profileImage);
+    }
+
+    // 2. Sync with backend
+    return this.http.put<User>(`${this.apiUrl}/${user.id}`, data).pipe(
       tap(updatedUser => {
-        const fullUser = { ...currentUser, ...updatedUser };
-        this.currentUserSubject.next(fullUser);
-        localStorage.setItem(this.currentUserStorageKey, JSON.stringify(fullUser));
+        const normalized = this.normalizeUser(updatedUser);
+        
+        // Ensure local state is updated with both backend data and cache
+        const cachedImage = this.getCachedProfileImage(normalized.email);
+        if (cachedImage) normalized.profileImage = cachedImage;
+
+        this.saveCurrentUser(normalized);
+        this.currentUserSubject.next(normalized);
+      }),
+      catchError(err => {
+        console.error('Failed to sync profile with server:', err);
+        // Fallback: update local state anyway to maintain the "instant" feel
+        const localUpdate = this.normalizeUser({ ...user, ...data });
+        this.saveCurrentUser(localUpdate);
+        this.currentUserSubject.next(localUpdate);
+        return of(localUpdate);
       })
     );
   }

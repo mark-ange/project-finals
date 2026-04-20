@@ -1,20 +1,21 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { NgFor, NgIf } from '@angular/common';
+import { NgClass, NgFor, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { User } from '../../models/user.model';
+import { NavigationComponent } from '../../shared/navigation/navigation.component';
 
 @Component({
   selector: 'app-user-list',
   standalone: true,
-  imports: [NgFor, NgIf, RouterLink],
+  imports: [NgFor, NgIf, NgClass, RouterLink, NavigationComponent],
   templateUrl: './user-list.component.html',
   styleUrls: ['./user-list.component.css']
 })
 export class UserListComponent implements OnInit {
   private readonly userService = inject(UserService);
-  readonly authService = inject(AuthService);
+  public readonly authService = inject(AuthService);
 
   users: User[] = [];
   loading = false;
@@ -22,6 +23,9 @@ export class UserListComponent implements OnInit {
   resetMessage = '';
   resetMessageType: 'success' | 'error' | 'info' | null = null;
   pendingDeleteUserId: number | null = null;
+  currentFilter: 'all' | 'student' | 'admin' = 'all';
+  allUsers: User[] = [];
+  visiblePasswordIds: Set<number> = new Set();
 
   ngOnInit(): void {
     this.loadUsers();
@@ -33,7 +37,9 @@ export class UserListComponent implements OnInit {
 
     this.userService.getUsers().subscribe({
       next: users => {
-        this.users = users;
+        // Exclude main-admin from the list since they are the ones managing it
+        this.allUsers = users.filter((u: any) => u.role !== 'main-admin');
+        this.applyFilter();
         this.loading = false;
       },
       error: () => {
@@ -41,6 +47,19 @@ export class UserListComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  setFilter(filter: 'all' | 'student' | 'admin'): void {
+    this.currentFilter = filter;
+    this.applyFilter();
+  }
+
+  private applyFilter(): void {
+    if (this.currentFilter === 'all') {
+      this.users = [...this.allUsers];
+    } else {
+      this.users = this.allUsers.filter(u => u.role === this.currentFilter);
+    }
   }
 
   requestDeleteUser(user: User): void {
@@ -74,6 +93,18 @@ export class UserListComponent implements OnInit {
       this.resetMessage = result.message;
       this.resetMessageType = result.success ? 'success' : 'error';
     });
+  }
+
+  togglePassword(userId: number): void {
+    if (this.visiblePasswordIds.has(userId)) {
+      this.visiblePasswordIds.delete(userId);
+    } else {
+      this.visiblePasswordIds.add(userId);
+    }
+  }
+
+  isPasswordVisible(userId: number): boolean {
+    return this.visiblePasswordIds.has(userId);
   }
 
   trackByUserId(index: number, user: User): number {

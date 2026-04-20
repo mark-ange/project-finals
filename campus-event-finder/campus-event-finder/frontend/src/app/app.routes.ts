@@ -30,5 +30,5 @@ export const routes: Routes = [
   { path: 'settings', component: SettingsComponent, canActivate: [authGuard] },
   { path: 'users', component: UserListComponent },
   { path: 'users/new', component: UserCreateComponent },
-  { path: 'users/:id/edit', component: UserEditComponent }
+  { path: 'users/edit/:id', component: UserEditComponent }
 ];

@@ -7,7 +7,7 @@ import { NavigationComponent } from '../shared/navigation/navigation.component';
 @Component({
   selector: 'app-about',
   standalone: true,
-  imports: [NgIf, NgFor, RouterLink, NavigationComponent],
+  imports: [NgIf, NavigationComponent],
   templateUrl: './about.component.html',
   styleUrls: ['./about.component.css']
 })

@@ -3,171 +3,177 @@
 /* Navigation Header */
 .navigation-header {
   height: 64px;
-  background: linear-gradient(135deg, #710000 0%, #4a0000 100%);
+  background: linear-gradient(135deg, #8e0000 0%, #5d0000 100%);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
   position: sticky;
   top: 0;
   z-index: 120;
-  transition: background 0.3s ease;
+  border-bottom: 2px solid rgba(255, 212, 0, 0.2);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .brand-logo {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
-  border-radius: 8px;
-  border: 2px solid rgba(255, 212, 0, 0.4);
+  border-radius: 10px;
+  border: 2px solid #ffd400;
+  box-shadow: 0 0 10px rgba(255, 212, 0, 0.3);
 }
 
 .brand-text {
   display: flex;
   flex-direction: column;
   color: #ffd400;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.1;
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
-  letter-spacing: 2px;
-}
-
-.menu-container {
-  position: relative;
-  display: flex;
-  align-items: center;
+  letter-spacing: 2.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .menu-button {
   border: none;
-  background: rgba(255, 255, 255, 0.08);
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  position: fixed;
-  top: 12px;
-  right: 18px;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  position: absolute;
+  top: 10px;
+  right: 20px;
   z-index: 230;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
 }
 
 .menu-button:hover {
-  background: rgba(255, 255, 255, 0.18);
-  transform: scale(1.05);
+  background: rgba(255, 212, 0, 0.2);
+  border-color: rgba(255, 212, 0, 0.5);
+  transform: translateY(-2px) scale(1.05);
 }
 
 .menu-button span {
-  width: 20px;
-  height: 2px;
+  width: 22px;
+  height: 2.5px;
   background: #fff;
   display: block;
-  border-radius: 2px;
-  transition: all 0.2s;
+  border-radius: 4px;
+  transition: all 0.3s;
 }
 
 .menu-strip {
-  background: #3d0000;
+  background: rgba(61, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 10px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 212, 0, 0.2);
   position: fixed;
-  top: 70px;
-  right: 18px;
-  width: 190px;
+  top: 75px;
+  right: 20px;
+  width: 210px;
   z-index: 220;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
-  animation: slideDown 0.2s cubic-bezier(0.2, 0, 0, 1);
-  transition: background 0.3s ease;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  transform-origin: top right;
+  animation: premiumExpand 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes slideDown {
+@keyframes premiumExpand {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: scale(0.9) translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1) translateY(0);
   }
 }
 
 .menu-strip button {
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 8px 18px;
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.05);
   color: #fff;
   font-family: 'Inter', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .menu-strip button:hover {
   background: rgba(255, 212, 0, 0.15);
   border-color: rgba(255, 212, 0, 0.6);
   color: #ffd400;
+  transform: translateX(4px);
 }
 
-/* ─── Dark Mode ─────────────────────────────────────── */
+.menu-divider {
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, rgba(255, 212, 0, 0.3), transparent);
+  margin: 5px 8px;
+}
+
+.notification-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #ffd400;
+  border-radius: 50%;
+  margin-left: auto;
+  box-shadow: 0 0 10px rgba(255, 212, 0, 0.8);
+  animation: pulse-gold 2s infinite;
+}
+
+@keyframes pulse-gold {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ─── Dark Mode Overlay ────────────────────────────── */
 :host-context(.dark-mode) .navigation-header {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  background: linear-gradient(135deg, #4a0000 0%, #2a0000 100%);
+  background: linear-gradient(135deg, #4a0000 0%, #1a0000 100%);
+  border-bottom-color: rgba(255, 212, 0, 0.1);
 }
 
 :host-context(.dark-mode) .menu-strip {
-  background: #1a0000;
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-:host-context(.dark-mode) .menu-strip button {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-:host-context(.dark-mode) .menu-strip button:hover {
-  background: rgba(255, 212, 0, 0.12);
-  border-color: rgba(255, 212, 0, 0.35);
+  background: rgba(20, 0, 0, 0.98);
+  border-color: rgba(255, 212, 0, 0.15);
 }
 
 :host-context(.dark-mode) .menu-button {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-:host-context(.dark-mode) .menu-button:hover {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
 }
 
 @media (max-width: 680px) {
-  .menu-button {
-    top: 10px;
-    right: 12px;
-  }
-
   .menu-strip {
-    right: 12px;
-    left: 12px;
+    right: 15px;
+    left: 15px;
     width: auto;
   }
 }

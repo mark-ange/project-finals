@@ -293,11 +293,11 @@ export class DashboardComponent implements OnInit {
 
     this.engagement
       .registerForEvent(event.id, {
-        userId: this.currentUser.id,
-        name: this.currentUser.fullName,
-        email: this.currentUser.email,
-        department: this.currentUser.department,
-        role: this.currentUser.role
+        userId: this.currentUser!.id,
+        name: this.currentUser!.fullName || 'Anonymous',
+        email: this.currentUser!.email,
+        department: this.currentUser!.department || 'General',
+        role: this.currentUser!.role || 'student'
       })
       .subscribe({
         next: () => {

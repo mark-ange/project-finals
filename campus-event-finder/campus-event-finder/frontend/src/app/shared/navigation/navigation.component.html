@@ -16,6 +16,10 @@
 
     <nav class="menu-strip" *ngIf="menuOpen" aria-label="Navigation menu">
       <button type="button" (click)="navigateTo('/dashboard')">Home</button>
+      <button type="button" (click)="navigateTo('/notifications')">
+        Notifications
+        <span *ngIf="hasUnreadNotifications" class="notification-dot"></span>
+      </button>
       <button
         type="button"
         *ngIf="currentUser?.role === 'student' && !isProfilePage()"
@@ -30,7 +34,14 @@
       >
         Admin Events
       </button>
-      <button type="button" (click)="navigateTo('/notifications')">Notifications</button>
+      <button
+        type="button"
+        *ngIf="currentUser?.role === 'main-admin'"
+        (click)="navigateTo('/users')"
+      >
+        Security & Users
+      </button>
+      <div class="menu-divider"></div>
       <button type="button" (click)="navigateTo('/about')">About University</button>
       <button type="button" (click)="navigateTo('/settings')">Settings</button>
       <button type="button" (click)="logout()">Logout</button>
