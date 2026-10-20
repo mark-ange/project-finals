@@ -1,0 +1,7 @@
+{
+  "name": "@civicalert/cepalco-api",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "tsx watch src/main.ts" },
+  "dependencies": { "@civicalert/api-core": "*", "express": "^5.1.0" }
+}
